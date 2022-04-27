@@ -1,0 +1,41 @@
+{
+  "name": "mean-multisig-sdk",
+  "version": "0.1.0",
+  "description": "Typescript SDK to interact with the Mean Multisig program.",
+  "main": "index.ts",
+  "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
+  "author": "Yansel <yanselfgok@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "keywords": [
+    "mean-multisig"
+  ],
+  "bugs": {
+    "url": "https://github.com/mean-dao/mean-tvl/issues"
+  },
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib/*.*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -R ./lib",
+    "clean:win": "rmdir /s lib"
+  },
+  "devDependencies": {
+    "@tsconfig/node14": "^1.0.1",
+    "@types/node": "^17.0.29",
+    "typescript": "^4.6.3",
+    "prettier": "^2.5.1",
+    "bn.js": "^5.2.0",
+    "buffer": "^6.0.3"
+  },
+  "dependencies": {
+    "@solana/web3.js": "1.31.0",
+    "@solana/spl-token": "0.2.0",
+    "@project-serum/anchor": "^0.24.2",
+    "@project-serum/anchor-cli": "^0.24.2",
+    "eslint": "^8.14.0",
+    "ts-node": "^10.7.0"
+  }
+}
