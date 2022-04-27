@@ -3,9 +3,11 @@
     "display": "Node 14",  
     "compilerOptions": {
       "lib": ["es2021"],
+      "outDir": "lib",
       "module": "commonjs",
       "target": "es2021",  
       "strict": true,
+      "declaration": true,
       "esModuleInterop": true,
       "skipLibCheck": true,
       "forceConsistentCasingInFileNames": true
