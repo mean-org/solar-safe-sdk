@@ -93,22 +93,33 @@ export type MultisigTransactionSummary = {
   description: string;
   expirationDate: string;
   didSigned: boolean;
-  instruction: MultisigTransactionInstructionInfo;
+  instruction: MultisigInstruction;
 };
 
-export type MultisigTransactionInstructionInfo = {
-  programId: string;
-  accounts: InstructionAccountInfo[];
-  data: InstructionDataInfo[];
+export type MultisigIntegration = {
+  program: InstructionProgram;
+  instructions: MultisigInstruction[];
 };
 
-export type InstructionAccountInfo = {
+export type MultisigInstruction = {
+  name: string;
+  accounts: InstructionAccount[];
+  data: InstructionParameter[];
+};
+
+export type InstructionProgram = {
+  name: string;
+  address: string;
+};
+
+export type InstructionAccount = {
   index: number;
   label: string;
-  value: string;
+  address: string;
 };
 
-export type InstructionDataInfo = {
-  label: string;
-  value: string;
+export type InstructionParameter = {
+  index: number;
+  name: string;
+  value: any;
 };
