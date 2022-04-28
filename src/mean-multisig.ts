@@ -1,4 +1,4 @@
-import { AnchorProvider, BN, Idl, Program, Provider } from "@project-serum/anchor";
+import { AnchorProvider, BN, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
 import { AccountMeta, Commitment, Connection, ConnectionConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigParticipant, MultisigTransaction } from "./types";
@@ -16,7 +16,11 @@ export class MeanMultisig implements Multisig {
   private connection: Connection;
 
   /**
-   * MeanMultisig class ctor. Intitialize program and connection
+   * MeanMultisig class ctor. Intitialize program and connection.
+   * 
+   * @param {string} url - The RPC url to use to initialize the program.
+   * @param {PublicKey} wallet - The wallet to use to initialize the program.
+   * @param {Commitment | ConnectionConfig} commitment - The commitment to use in the connection.
    */
   constructor(
     url: string,
@@ -40,7 +44,8 @@ export class MeanMultisig implements Multisig {
    * Gets the multisigs for where a specific owner belongs to. 
    * If owner is undefined then gets all multisig accounts of the program.
    * 
-   * @param: owner
+   * @param {PublicKey=} owner - One of the owner of the multisig account.
+   * @returns {Promise<Multisig[]>} Returns a list of parsed multisig accounts.
    */
   getMultisigs = async (owner?: PublicKey | undefined): Promise<Multisig[]> => {
 
@@ -96,7 +101,8 @@ export class MeanMultisig implements Multisig {
    * Gets the transactions for a specific multisig. 
    * If multisig is undefined then gets all transactions of the program
    * 
-   * @param: multisig
+   * @param {PublicKey=} multisig - The multisig account where the transaction belongs to.
+   * @returns {Promise<Multisig[]>} Returns a list of parsed multisig transactions.
    */
   getMultisigTransactions = async (multisig: PublicKey | undefined): Promise<any> => {
 
@@ -142,10 +148,11 @@ export class MeanMultisig implements Multisig {
   /**
    * Creates a new multisig account
    *
-   * @param: payer
-   * @param: label
-   * @param: threshold
-   * @param: participants
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
    */
   createMultisig = async (
     payer: PublicKey,
@@ -198,15 +205,16 @@ export class MeanMultisig implements Multisig {
   /**
    * Creates a multisig transaction proposal
    *
-   * @param: proposer
-   * @param: title
-   * @param: description
-   * @param: expirationDate
-   * @param: operation
-   * @param: program
-   * @param: accounts
-   * @param: data
-   * @param: preInstructions
+   * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
+   * @param {string} title - The title of the transaction proposal.
+   * @param {string | undefined} description - An optional description for the transaction proposal.
+   * @param {Date | undefined} expirationDate - Optional transaction expiration date.
+   * @param {number} operation - The itransaction nstruction identifier of the transaction proposal. 
+   * @param {PublicKey} program - The id of the program where the transaction instruction belongs to.
+   * @param {AccountMeta[]} accounts - The accounts required by the transaction instruction to be executed.
+   * @param {Buffer} data - The data required by the transaction instruction to be executed.
+   * @param {TransactionInstruction[]} [preInstructions=[]] - Any required instruction that needs to be executed before creating the transaction proposal.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new transaction proposal.
    */
   createTransaction = async (
     proposer: PublicKey,
@@ -280,15 +288,16 @@ export class MeanMultisig implements Multisig {
   /**
    * Creates a multisig transaction proposal
    *
-   * @param: proposer
-   * @param: title
-   * @param: description
-   * @param: expirationDate
-   * @param: operation
-   * @param: program
-   * @param: accounts
-   * @param: data
-   * @param: preInstructions
+   * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
+   * @param {string} title - The title of the transaction proposal.
+   * @param {string | undefined} description - An optional description for the transaction proposal.
+   * @param {Date | undefined} expirationDate - Optional transaction expiration date.
+   * @param {number} operation - The itransaction nstruction identifier of the transaction proposal. 
+   * @param {PublicKey} program - The id of the program where the transaction instruction belongs to.
+   * @param {AccountMeta[]} accounts - The accounts required by the transaction instruction to be executed.
+   * @param {Buffer} data - The data required by the transaction instruction to be executed.
+   * @param {TransactionInstruction[]} [preInstructions=[]] - Any required instruction that needs to be executed before creating the transaction proposal.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new transaction proposal.
    */
   createMoneyStreamTransaction = async (
     proposer: PublicKey,
@@ -364,8 +373,9 @@ export class MeanMultisig implements Multisig {
   /**
    * Cancels a multisig transaction proposal
    *
-   * @param: proposer
-   * @param: transaction
+   * @param {PublicKey} proposer - The owner that created the transaction proposal.
+   * @param {PublicKey} transaction - The transaction proposal to be canceled.
+   * @returns {Promise<Transaction | null>} Returns a transaction for canceling the transaction proposal.
    */
   cancelTransaction = async (
     proposer: PublicKey,
@@ -416,8 +426,9 @@ export class MeanMultisig implements Multisig {
   /**
    * Approves a multisig transaction proposal
    *
-   * @param: owner
-   * @param: transaction
+   * @param {PublicKey} owner - One of the owners of the transaction proposal.
+   * @param {PublicKey} transaction - The transaction proposal to be approved.
+   * @returns {Promise<Transaction | null>} Returns a transaction for approving the transaction proposal.
    */
   approveTransaction = async (
     owner: PublicKey,
@@ -468,8 +479,9 @@ export class MeanMultisig implements Multisig {
   /**
    * Executes a multisig transaction proposal
    *
-   * @param: owner
-   * @param: transaction
+   * @param {PublicKey} owner - One of the owners of the transaction proposal.
+   * @param {PublicKey} transaction - The transaction proposal to be executed.
+   * @returns {Promise<Transaction | null>} Returns a transaction for executing the transaction proposal.
    */
   executeTransaction = async (
     owner: PublicKey,
@@ -540,8 +552,9 @@ export class MeanMultisig implements Multisig {
   /**
    * Executes a multisig transaction proposal (Special case for Money Stream creation)
    *
-   * @param: owner
-   * @param: transaction
+   * @param {PublicKey} owner - One of the owners of the `Create Money Stream` transaction proposal.
+   * @param {PublicKey} transaction - The `Create Money Stream` transaction proposal to be executed.
+   * @returns {Promise<Transaction | null>} Returns a transaction for executing a `Create Money Stream` transaction proposal.
    */
   executeCreateMoneyStreamTransaction = async (
     owner: PublicKey,
