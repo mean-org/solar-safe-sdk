@@ -2,8 +2,8 @@ import { AnchorProvider, BN, Idl, Program, Provider } from "@project-serum/ancho
 import { AccountMeta, Commitment, Connection, ConnectionConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigParticipant, MultisigTransaction } from "./types";
-import idl from "./idl";
 import { parseMultisigTransaction, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
+import idl from "./idl";
 
 /**
  * MeanMultisig class implementation

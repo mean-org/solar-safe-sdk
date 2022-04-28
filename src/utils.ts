@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Idl, Program } from "@project-serum/anchor";
-import { MEAN_MULTISIG_PROGRAM, Multisig, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MULTISIG_ACTIONS } from "./types";
+import { Multisig, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MULTISIG_ACTIONS } from "./types";
 
 export const getFees = async (
   program: Program<Idl>,
@@ -94,30 +94,32 @@ export const getTransactionStatus = (
 };
 
 export const parseMultisigV1Account = async (
-    program: Program<Idl>,
-    info: any
-  
-  ): Promise<Multisig | null> => {
-  
-    try {
-  
-      const [multisigSigner] = await PublicKey.findProgramAddress(
-        [info.publicKey.toBuffer()],
-        program.programId
-      );
-  
-      let owners: MultisigParticipant[] = [];
-      let labelBuffer = Buffer.alloc(
-        info.account.label.length,
-        info.account.label
-      ).filter(function (elem, index) {
-        return elem !== 0;
-      });
-  
-      for (let i = 0; i < info.account.owners.length; i ++) {
-        owners.push({
-          address: info.account.owners[i].toBase58(),
-          name: info.account.ownersNames && info.account.ownersNames.length && info.account.ownersNames[i].length > 0 
+  program: Program<Idl>,
+  info: any
+
+): Promise<Multisig | null> => {
+  try {
+
+    const [multisigSigner] = await PublicKey.findProgramAddress(
+      [info.publicKey.toBuffer()],
+      program.programId
+    );
+
+    let owners: MultisigParticipant[] = [];
+    let labelBuffer = Buffer.alloc(
+      info.account.label.length,
+      info.account.label
+    ).filter(function (elem, index) {
+      return elem !== 0;
+    });
+
+    for (let i = 0; i < info.account.owners.length; i++) {
+      owners.push({
+        address: info.account.owners[i].toBase58(),
+        name:
+          info.account.ownersNames &&
+          info.account.ownersNames.length &&
+          info.account.ownersNames[i].length > 0
             ? new TextDecoder().decode(
                 Buffer.from(
                   Uint8Array.of(
@@ -125,31 +127,30 @@ export const parseMultisigV1Account = async (
                   )
                 )
               )
-            : ""
-        } as MultisigParticipant);
-      }
-  
-      const multisig = {
-        id: info.publicKey,
-        version: info.account.version,
-        label: new TextDecoder().decode(labelBuffer),
-        authority: multisigSigner,
-        nounce: info.account.nonce,
-        ownerSeqNumber: info.account.ownerSetSeqno,
-        threshold: info.account.threshold.toNumber(),
-        pendingTxsAmount: info.account.pendingTxs.toNumber(),
-        createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
-        owners: owners,
-  
-      } as Multisig;
-  
-      return multisig;
-  
-    } catch (err: any) {
-      console.error(`Parse Multisig Account: ${err}`);
-      return null;
+            : "",
+      } as MultisigParticipant);
     }
-  };
+
+    const multisig = {
+      id: info.publicKey,
+      version: info.account.version,
+      label: new TextDecoder().decode(labelBuffer),
+      authority: multisigSigner,
+      nounce: info.account.nonce,
+      ownerSeqNumber: info.account.ownerSetSeqno,
+      threshold: info.account.threshold.toNumber(),
+      pendingTxsAmount: info.account.pendingTxs.toNumber(),
+      createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
+      owners: owners,
+    } as Multisig;
+
+    return multisig;
+
+  } catch (err: any) {
+    console.error(`Parse Multisig Account: ${err}`);
+    return null;
+  }
+};
 
 export const parseMultisigV2Account = async (
   program: Program<Idl>,
@@ -243,7 +244,7 @@ export const parseMultisigTransaction = (
       status: getTransactionStatus(multisig, txInfo, txDetailInfo),
       operation: txInfo.account.operation,
       accounts: txInfo.account.accounts,
-    //   didSigned: txInfo.account.signers[currentOwnerIndex],
+      didSigned: false,
       proposer: txInfo.account.proposer,
       pdaTimestamp: txInfo.account.pdaTimestamp
         ? txInfo.account.pdaTimestamp.toNumber()
@@ -297,3 +298,17 @@ export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTrans
     throw Error(`Multisig Transaction Error: ${err}`);
   }
 };
+
+export const isTransactionApprovedBy = (
+    owner: PublicKey, 
+    multisig: Multisig, 
+    transaction: MultisigTransaction
+
+): boolean => {
+    
+  let ownerIndex = multisig.owners.findIndex(
+    (o: any) => o.address === owner.toBase58()
+  );
+
+  return transaction.signers[ownerIndex];
+}
