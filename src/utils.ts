@@ -2,6 +2,13 @@ import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Idl, Program } from "@project-serum/anchor";
 import { Multisig, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MULTISIG_ACTIONS } from "./types";
 
+/**
+ * Gets the multisig actions fees.
+ * 
+ * @param {Program<Idl>} program - Multisig program instance
+ * @param {MULTISIG_ACTIONS} action - Multisig action to get the fees for.
+ * @returns {Promise<MultisigTransactionFees>} Returns a MultisigTransactionFees object.
+ */
 export const getFees = async (
   program: Program<Idl>,
   action: MULTISIG_ACTIONS
@@ -46,6 +53,14 @@ export const getFees = async (
   return txFees;
 };
 
+/**
+ * Gets the multisig trasaction status.
+ * 
+ * @param {any} multisig - Multisig account where the transaction belongs.
+ * @param {any} info - Transaction account to get the status.
+ * @param {any} detail - Transaction Detail account of the multisig.
+ * @returns {MultisigTransactionStatus} Returns the status of the multisig transaction proposal.
+ */
 export const getTransactionStatus = (
   multisig: any,
   info: any,
@@ -54,6 +69,7 @@ export const getTransactionStatus = (
 ): MultisigTransactionStatus => {
 
   try {
+
     if (!multisig) {
       throw Error("Invalid parameter: 'multisig'");
     }
@@ -93,8 +109,15 @@ export const getTransactionStatus = (
   }
 };
 
+/**
+ * Parses the multisig version 1 account.
+ * 
+ * @param {PublicKey} programId - The id of the multisig program.
+ * @param {any} info - Transaction account to get the status.
+ * @returns {Promise<Multisig | null>} Returns the parsed multisig account version 1.
+ */
 export const parseMultisigV1Account = async (
-  program: Program<Idl>,
+  programId: PublicKey,
   info: any
 
 ): Promise<Multisig | null> => {
@@ -102,7 +125,7 @@ export const parseMultisigV1Account = async (
 
     const [multisigSigner] = await PublicKey.findProgramAddress(
       [info.publicKey.toBuffer()],
-      program.programId
+      programId
     );
 
     let owners: MultisigParticipant[] = [];
@@ -152,8 +175,15 @@ export const parseMultisigV1Account = async (
   }
 };
 
+/**
+ * Parses the multisig version 2 account.
+ * 
+ * @param {PublicKey} programId - The id of the multisig program.
+ * @param {any} info - Transaction account to get the status.
+ * @returns {Promise<Multisig | null>} Returns the parsed multisig account version 2.
+ */
 export const parseMultisigV2Account = async (
-  program: Program<Idl>,
+  programId: PublicKey,
   info: any
 
 ): Promise<Multisig | null> => {
@@ -162,7 +192,7 @@ export const parseMultisigV2Account = async (
 
     const [multisigSigner] = await PublicKey.findProgramAddress(
       [info.publicKey.toBuffer()],
-      program.programId
+      programId
     );
 
     let owners: MultisigParticipant[] = [];
@@ -216,6 +246,14 @@ export const parseMultisigV2Account = async (
   }
 }; 
 
+/**
+ * Parses the multisig transaction account.
+ * 
+ * @param {any} multisig - Multisig account where the transaction belongs.
+ * @param {any} txInfo - Transaction account to parse.
+ * @param {any} txDetailInfo - Transaction detail account to parse.
+ * @returns {MultisigTransaction} Returns the parsed multisig transaction account.
+ */
 export const parseMultisigTransaction = (
   multisig: any,
 //   owner: PublicKey,
@@ -260,6 +298,12 @@ export const parseMultisigTransaction = (
   }
 };
 
+/**
+ * Parses the multisig transaction detail account.
+ * 
+ * @param {any} txDetailInfo - Transaction detail account to parse.
+ * @returns {MultisigTransactionDetail} Returns the parsed multisig transaction detail account.
+ */
 export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTransactionDetail => {
 
   try {
@@ -299,16 +343,24 @@ export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTrans
   }
 };
 
+/**
+ * Checks if a transaction has been approved by a specific owner.
+ * 
+ * @param {PublicKey} owner - The owner of the multsig account where the transaction belongs.
+ * @param {Multisig} multisig - The multsig account where the transaction belongs.
+ * @param {MultisigTransaction} transaction - Transaction account to check if it was approved by the owner.
+ * @returns {boolean} Returns `true` if the transaction was approved by the owner otherwise returns `false`.
+ */
 export const isTransactionApprovedBy = (
-    owner: PublicKey, 
-    multisig: Multisig, 
-    transaction: MultisigTransaction
+  owner: PublicKey,
+  multisig: Multisig,
+  transaction: MultisigTransaction
 
 ): boolean => {
-    
+
   let ownerIndex = multisig.owners.findIndex(
     (o: any) => o.address === owner.toBase58()
   );
 
   return transaction.signers[ownerIndex];
-}
+};

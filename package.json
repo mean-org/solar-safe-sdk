@@ -1,5 +1,5 @@
 {
-  "name": "mean-multisig-sdk",
+  "name": "@mean-dao/mean-multisig-sdk",
   "version": "0.1.0",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "index.ts",

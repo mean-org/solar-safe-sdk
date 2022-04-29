@@ -11,6 +11,7 @@ export interface Multisig {
     /**
      * Creates a new multisig account
      *
+     * @public
      * @param {PublicKey} payer - The payer of the transaction.
      * @param {string} label - The label of the multisig account.
      * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
@@ -29,6 +30,7 @@ export interface Multisig {
     /**
      * Creates a multisig transaction proposal
      *
+     * @public
      * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
      * @param {string} title - The title of the transaction proposal.
      * @param {string | undefined} description - An optional description for the transaction proposal.
@@ -57,6 +59,7 @@ export interface Multisig {
     /**
      * Cancels a multisig transaction proposal
      *
+     * @public
      * @param {PublicKey} proposer - The owner that created the transaction proposal.
      * @param {PublicKey} transaction - The transaction proposal to be canceled.
      * @returns {Promise<Transaction | null>} Returns a transaction for canceling the transaction proposal.
@@ -75,6 +78,7 @@ export interface Multisig {
     /**
      * Executes a multisig transaction proposal
      *
+     * @public
      * @param {PublicKey} owner - One of the owners of the transaction proposal.
      * @param {PublicKey} transaction - The transaction proposal to be executed.
      * @returns {Promise<Transaction | null>} Returns a transaction for executing the transaction proposal.
