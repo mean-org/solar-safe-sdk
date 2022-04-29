@@ -1,4 +1,4 @@
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { Enum, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Idl, Program } from "@project-serum/anchor";
 import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruction, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummary, MULTISIG_ACTIONS } from "./types";
 
@@ -89,20 +89,17 @@ export const getTransactionStatus = (
       return MultisigTransactionStatus.Expired;
     }
 
-    let status = MultisigTransactionStatus.Pending;
-    let approvals = info.account.signers.filter(
-      (s: boolean) => s === true
-    ).length;
+    let approvals = info.account.signers.filter((s: boolean) => s).length;
 
-    if (multisig && multisig.threshold === approvals) {
-      status = MultisigTransactionStatus.Approved;
+    if (multisig.threshold == approvals) {
+      return MultisigTransactionStatus.Approved;
     }
 
-    if (multisig && multisig.ownerSeqNumber !== info.account.ownerSetSeqno) {
-      status = MultisigTransactionStatus.Voided;
+    if (multisig.ownerSeqNumber !== info.account.ownerSeqNumber) {
+      return MultisigTransactionStatus.Voided;
     }
 
-    return status;
+    return MultisigTransactionStatus.Pending;
 
   } catch (err) {
     throw Error(`Multisig Transaction Status: ${err}`);
@@ -251,13 +248,14 @@ export const parseMultisigV2Account = async (
  * Parses the multisig transaction account.
  * 
  * @param {any} multisig - Multisig account where the transaction belongs.
+ * @param {PublicKey} owner - The owner of the multisig account where the transaction belongs.
  * @param {any} txInfo - Transaction account to parse.
  * @param {any} txDetailInfo - Transaction detail account to parse.
  * @returns {MultisigTransaction} Returns the parsed multisig transaction account.
  */
 export const parseMultisigTransaction = (
   multisig: any,
-//   owner: PublicKey,
+  owner: PublicKey,
   txInfo: any,
   txDetailInfo: any
 
@@ -265,9 +263,9 @@ export const parseMultisigTransaction = (
 
   try {
 
-    // let currentOwnerIndex = multisig.owners.findIndex(
-    //   (o: any) => o.address === owner.toBase58()
-    // );
+    let ownerIndex = multisig.owners.findIndex(
+      (o: any) => o.address.toBase58() === owner.toBase58()
+    );
 
     return Object.assign({}, {
       id: txInfo.publicKey,
@@ -280,10 +278,10 @@ export const parseMultisigTransaction = (
         txInfo.account.executedOn && txInfo.account.executedOn > 0
           ? new Date(txInfo.account.executedOn.toNumber() * 1000)
           : undefined,
-      status: getTransactionStatus(multisig, txInfo, txDetailInfo),
+      status: getTransactionStatus(multisig, txInfo, txDetailInfo) as number,
       operation: txInfo.account.operation,
       accounts: txInfo.account.accounts,
-      didSigned: false,
+      didSigned: txInfo.account.signers[ownerIndex],
       proposer: txInfo.account.proposer,
       pdaTimestamp: txInfo.account.pdaTimestamp
         ? txInfo.account.pdaTimestamp.toNumber()
@@ -342,28 +340,6 @@ export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTrans
   } catch (err) {
     throw Error(`Multisig Transaction Error: ${err}`);
   }
-};
-
-/**
- * Checks if a transaction has been approved by a specific owner.
- * 
- * @param {PublicKey} owner - The owner of the multsig account where the transaction belongs.
- * @param {MultisigInfo} multisig - The multsig account where the transaction belongs.
- * @param {MultisigTransaction} transaction - Transaction account to check if it was approved by the owner.
- * @returns {boolean} Returns `true` if the transaction was approved by the owner otherwise returns `false`.
- */
-export const isTransactionApprovedBy = (
-  owner: PublicKey,
-  multisig: MultisigInfo,
-  transaction: MultisigTransaction
-
-): boolean => {
-
-  let ownerIndex = multisig.owners.findIndex(
-    (o: any) => o.address === owner.toBase58()
-  );
-
-  return transaction.signers[ownerIndex];
 };
 
 /**

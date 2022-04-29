@@ -119,21 +119,22 @@ export class MeanMultisig implements Multisig {
    * If multisig is undefined then gets all transactions of the program
    * 
    * @public
-   * @param {PublicKey=} multisig - The multisig account where the transaction belongs to.
+   * @param {PublicKey} multisig - The multisig account where the transaction belongs.
+   * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
    * @returns {Promise<MultisigTransaction[]>} Returns a list of parsed multisig transactions.
    */
-  getMultisigTransactions = async (multisig: PublicKey | undefined): Promise<MultisigTransaction[]> => {
+  getMultisigTransactions = async (multisig: PublicKey, owner: PublicKey): Promise<MultisigTransaction[]> => {
 
     try {
 
-      let filters: GetProgramAccountsFilter[] = [];
+      const multisigAcc = await this.program.account.multisigV2.fetchNullable(multisig);
 
-      if (multisig) {
-        filters = [
-          { dataSize: 1200 },
-          { memcmp: { offset: 8, bytes: multisig.toString() } },
-        ];
-      }
+      if (!multisigAcc) { throw Error(`Multisig account ${multisig.toBase58()} not found`); }
+
+      let filters: GetProgramAccountsFilter[] = [
+        { dataSize: 1200 },
+        { memcmp: { offset: 8, bytes: multisig.toString() } },
+      ];
 
       let transactions: MultisigTransaction[] = [];
       let txs = await this.program.account.transaction.all(filters);
@@ -147,7 +148,7 @@ export class MeanMultisig implements Multisig {
         );
 
         const txDetail = await this.program.account.transactionDetail.fetchNullable(txDetailAddress);
-        let txInfo = parseMultisigTransaction(multisig, /*owner,*/ tx, txDetail);
+        let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
         transactions.push(txInfo);
       }
 
@@ -543,7 +544,7 @@ export class MeanMultisig implements Multisig {
             : meta
         )
         .concat({
-          pubkey: this.program.programId,
+          pubkey: txAccount.programId,
           isWritable: false,
           isSigner: false,
         });
@@ -615,7 +616,7 @@ export class MeanMultisig implements Multisig {
           meta.pubkey.equals(owner) ? { ...meta, isSigner: false } : meta
         )
         .concat({
-          pubkey: this.program.programId,
+          pubkey: txAccount.programId,
           isWritable: false,
           isSigner: false,
         });
