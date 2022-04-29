@@ -1,15 +1,24 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "display": "Node 14",  
-    "compilerOptions": {
-      "lib": ["es2021"],
-      "outDir": "lib",
-      "module": "commonjs",
-      "target": "es2021",  
-      "strict": true,
-      "declaration": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true
-    }
+  "extends": "@tsconfig/recommended/tsconfig.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Node 14",  
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2021"
+    ],
+    "outDir": "./lib",
+    "module": "commonjs",
+    "target": "es2021",  
+    "strict": true,
+    "allowJs": true,
+    "sourceMap": false,
+    "declaration": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
   }
+}

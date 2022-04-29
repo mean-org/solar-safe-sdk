@@ -1,7 +1,7 @@
 import { AnchorProvider, BN, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
 import { AccountMeta, Commitment, Connection, ConnectionConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
-import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigParticipant, MultisigTransaction } from "./types";
+import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction } from "./types";
 import { parseMultisigTransaction, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
 import idl from "./idl";
 
@@ -48,14 +48,23 @@ export class MeanMultisig implements Multisig {
   }
 
   /**
+   * Gets the multisig program instance.
+   * 
+   * @returns The multisig program object.
+   */
+  getProgram = (): Program<Idl> => {
+    return this.program;
+  }
+
+  /**
    * Gets the multisigs for where a specific owner belongs to. 
    * If owner is undefined then gets all multisig accounts of the program.
    * 
    * @public
    * @param {PublicKey=} owner - One of the owner of the multisig account.
-   * @returns {Promise<Multisig[]>} Returns a list of parsed multisig accounts.
+   * @returns {Promise<MultisigInfo[]>} Returns a list of parsed multisig accounts.
    */
-  getMultisigs = async (owner?: PublicKey | undefined): Promise<Multisig[]> => {
+  getMultisigs = async (owner?: PublicKey | undefined): Promise<MultisigInfo[]> => {
 
     try {
       // Get accounts
@@ -78,7 +87,7 @@ export class MeanMultisig implements Multisig {
       });
 
       accounts.push(...filteredAccs);
-      let multisigInfoArray: Multisig[] = [];
+      let multisigInfoArray: MultisigInfo[] = [];
 
       for (let info of accounts) {
         let parsedMultisig: any;
@@ -111,9 +120,9 @@ export class MeanMultisig implements Multisig {
    * 
    * @public
    * @param {PublicKey=} multisig - The multisig account where the transaction belongs to.
-   * @returns {Promise<Multisig[]>} Returns a list of parsed multisig transactions.
+   * @returns {Promise<MultisigTransaction[]>} Returns a list of parsed multisig transactions.
    */
-  getMultisigTransactions = async (multisig: PublicKey | undefined): Promise<any> => {
+  getMultisigTransactions = async (multisig: PublicKey | undefined): Promise<MultisigTransaction[]> => {
 
     try {
 

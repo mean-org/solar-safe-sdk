@@ -53,11 +53,11 @@ export type MultisigTransactionFees = {
 };
 
 /**
- * `Multisig` type definition
+ * `MultisigInfo` type definition
  * 
- * @type {Multisig}
+ * @type {MultisigInfo}
  */
-export type Multisig = {
+export type MultisigInfo = {
   id: PublicKey;
   label: string;
   description?: string;
@@ -137,30 +137,18 @@ export type MultisigTransactionSummary = {
   instruction: MultisigInstruction;
 };
 
-export type MultisigIntegration = {
-  program: InstructionProgram;
-  instructions: MultisigInstruction[];
-};
-
 export type MultisigInstruction = {
-  name: string;
+  programId: string;
   accounts: InstructionAccount[];
   data: InstructionParameter[];
 };
 
-export type InstructionProgram = {
-  name: string;
-  address: string;
-};
-
 export type InstructionAccount = {
-  index: number;
   label: string;
   address: string;
 };
 
 export type InstructionParameter = {
-  index: number;
   name: string;
   value: any;
 };

@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Idl, Program } from "@project-serum/anchor";
-import { Multisig, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MULTISIG_ACTIONS } from "./types";
+import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruction, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummary, MULTISIG_ACTIONS } from "./types";
 
 /**
  * Gets the multisig actions fees.
@@ -114,13 +114,13 @@ export const getTransactionStatus = (
  * 
  * @param {PublicKey} programId - The id of the multisig program.
  * @param {any} info - Transaction account to get the status.
- * @returns {Promise<Multisig | null>} Returns the parsed multisig account version 1.
+ * @returns {Promise<MultisigInfo | null>} Returns the parsed multisig account version 1.
  */
 export const parseMultisigV1Account = async (
   programId: PublicKey,
   info: any
 
-): Promise<Multisig | null> => {
+): Promise<MultisigInfo | null> => {
   try {
 
     const [multisigSigner] = await PublicKey.findProgramAddress(
@@ -165,7 +165,8 @@ export const parseMultisigV1Account = async (
       pendingTxsAmount: info.account.pendingTxs.toNumber(),
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
       owners: owners,
-    } as Multisig;
+
+    } as MultisigInfo;
 
     return multisig;
 
@@ -180,13 +181,13 @@ export const parseMultisigV1Account = async (
  * 
  * @param {PublicKey} programId - The id of the multisig program.
  * @param {any} info - Transaction account to get the status.
- * @returns {Promise<Multisig | null>} Returns the parsed multisig account version 2.
+ * @returns {Promise<MultisigInfo | null>} Returns the parsed multisig account version 2.
  */
 export const parseMultisigV2Account = async (
   programId: PublicKey,
   info: any
 
-): Promise<Multisig | null> => {
+): Promise<MultisigInfo | null> => {
 
   try {
 
@@ -236,7 +237,7 @@ export const parseMultisigV2Account = async (
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
       owners: owners,
 
-    } as Multisig;
+    } as MultisigInfo;
 
     return multisig;
 
@@ -347,13 +348,13 @@ export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTrans
  * Checks if a transaction has been approved by a specific owner.
  * 
  * @param {PublicKey} owner - The owner of the multsig account where the transaction belongs.
- * @param {Multisig} multisig - The multsig account where the transaction belongs.
+ * @param {MultisigInfo} multisig - The multsig account where the transaction belongs.
  * @param {MultisigTransaction} transaction - Transaction account to check if it was approved by the owner.
  * @returns {boolean} Returns `true` if the transaction was approved by the owner otherwise returns `false`.
  */
 export const isTransactionApprovedBy = (
   owner: PublicKey,
-  multisig: Multisig,
+  multisig: MultisigInfo,
   transaction: MultisigTransaction
 
 ): boolean => {
@@ -363,4 +364,104 @@ export const isTransactionApprovedBy = (
   );
 
   return transaction.signers[ownerIndex];
+};
+
+/**
+ * Gets the multisig transaction account summary
+ * 
+ * @param {MultisigTransaction} transaction - The multisig transaction to get the summary.
+ * @returns {MultisigTransactionSummary | undefined} Returns the multisig transaction summary.
+ */
+export const getMultisigTransactionSummary = (
+  transaction: MultisigTransaction
+
+): MultisigTransactionSummary | undefined => {
+
+  try {
+    let expDate =
+      transaction.details && transaction.details.expirationDate
+        ? transaction.details.expirationDate.getTime().toString().length > 13
+          ? new Date(
+              parseInt(
+                (
+                  transaction.details.expirationDate.getTime() / 1_000
+                ).toString()
+              )
+            ).toString()
+          : transaction.details.expirationDate.toString()
+        : "";
+
+    let txSummary = {
+      address: transaction.id.toBase58(),
+      operation: transaction.operation.toString(),
+      proposer: transaction.proposer ? transaction.proposer.toBase58() : "",
+      title: transaction.details ? transaction.details.title : "",
+      description: transaction.details ? transaction.details.description : "",
+      createdOn: transaction.createdOn.toString(),
+      executedOn: transaction.executedOn
+        ? transaction.executedOn.toString()
+        : "",
+      expirationDate: expDate,
+      approvals: transaction.signers.filter((s) => s === true).length,
+      multisig: transaction.multisig.toBase58(),
+      status: transaction.status.toString(),
+      didSigned: transaction.didSigned,
+      instruction: parseMultisigTransactionInstruction(transaction),
+
+    } as MultisigTransactionSummary;
+
+    return txSummary;
+    
+  } catch (err: any) {
+    console.error(`Parse Multisig Transaction: ${err}`);
+    return undefined;
+  }
+};
+
+const parseMultisigTransactionInstruction = (
+  transaction: MultisigTransaction
+
+): MultisigInstruction | null => {
+
+  try {
+
+    let ixAccInfos: InstructionAccount[] = [];
+    let accIndex = 0;
+
+    for (let acc of transaction.accounts) {
+      ixAccInfos.push({
+        index: accIndex,
+        label: "",
+        address: acc.pubkey.toBase58(),
+      } as InstructionAccount);
+
+      accIndex++;
+    }
+
+    // let ixDataInfos: InstructionDataInfo[] = [];
+    let bufferStr = Buffer.from(transaction.data).toString("hex");
+    let bufferStrArray: string[] = [];
+
+    for (let i = 0; i < bufferStr.length; i += 2) {
+      bufferStrArray.push(bufferStr.substring(i, i + 2));
+    }
+
+    let ixInfo = {
+      programId: transaction.programId.toBase58(),
+      accounts: ixAccInfos,
+      data: [
+        {
+          index: 0,
+          name: "",
+          value: bufferStrArray.join(" "),
+        } as InstructionParameter,
+      ],
+    } as MultisigInstruction;
+
+    return ixInfo;
+
+  } catch (err: any) {
+    console.error(`Parse Multisig Transaction: ${err}`);
+    return null;
+  }
 };
