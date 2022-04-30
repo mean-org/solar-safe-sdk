@@ -613,7 +613,7 @@ export class MeanMultisig implements Multisig {
       let remainingAccounts = txAccount.accounts
         // Change the signer status on the vendor signer since it's signed by the program, not the client.
         .map((meta: any) =>
-          meta.pubkey.equals(owner) ? { ...meta, isSigner: false } : meta
+          !meta.pubkey.equals(owner) ? { ...meta, isSigner: false } : meta
         )
         .concat({
           pubkey: txAccount.programId,
