@@ -142,7 +142,12 @@ export class MeanMultisig implements Multisig {
       );
 
       const txDetail = await this.program.account.transactionDetail.fetchNullable(txDetailAddress);
-      let txInfo = parseMultisigTransaction(multisigAcc, owner, transactionAcc, txDetail);
+      const tx = {
+        publicKey: transaction,
+        account: transactionAcc
+      };
+
+      const txInfo = parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
 
       return txInfo;
       
@@ -248,7 +253,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = payer;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[multisig]);
 
@@ -332,7 +337,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = proposer;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[transaction]);
 
@@ -418,7 +423,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = proposer;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[transaction]);
 
@@ -473,7 +478,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = proposer;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
 
       return tx;
@@ -527,7 +532,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = owner;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
 
       return tx;
@@ -601,7 +606,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = owner;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
 
       return tx;
@@ -676,7 +681,7 @@ export class MeanMultisig implements Multisig {
         .transaction();
 
       tx.feePayer = owner;
-      const { blockhash } = await this.connection.getRecentBlockhash(this.connection.commitment);
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
 
       return tx;
