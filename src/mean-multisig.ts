@@ -120,6 +120,44 @@ export class MeanMultisig implements Multisig {
    * 
    * @public
    * @param {PublicKey} multisig - The multisig account where the transaction belongs.
+   * @param {PublicKey} transaction - The transaction account.
+   * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
+   * @returns {Promise<MultisigTransaction>} Returns a parsed multisig transactions.
+   */
+  getMultisigTransaction = async (multisig: any, transaction: PublicKey, owner: PublicKey): Promise<MultisigTransaction | null> => {
+
+    try {
+
+      const multisigAcc = await this.program.account.multisigV2.fetchNullable(multisig);
+
+      if (!multisigAcc) { throw Error(`Multisig account ${multisig.toBase58()} not found`); }
+
+      const transactionAcc: any = await this.program.account.transaction.fetchNullable(transaction);
+
+      if (!transactionAcc) { throw Error(`Transaction account ${transaction.toBase58()} not found`); }
+
+      const [txDetailAddress] = await PublicKey.findProgramAddress(
+        [multisig.toBuffer(), transactionAcc.publicKey.toBuffer()],
+        this.program.programId
+      );
+
+      const txDetail = await this.program.account.transactionDetail.fetchNullable(txDetailAddress);
+      let txInfo = parseMultisigTransaction(multisigAcc, owner, transactionAcc, txDetail);
+
+      return txInfo;
+      
+    } catch (err: any) {
+      console.error(`Get Multisig Transaction: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Gets the transactions for a specific multisig. 
+   * If multisig is undefined then gets all transactions of the program
+   * 
+   * @public
+   * @param {PublicKey} multisig - The multisig account where the transaction belongs.
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
    * @returns {Promise<MultisigTransaction[]>} Returns a list of parsed multisig transactions.
    */
