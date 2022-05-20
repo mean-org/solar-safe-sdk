@@ -124,7 +124,7 @@ export class MeanMultisig implements Multisig {
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
    * @returns {Promise<MultisigTransaction>} Returns a parsed multisig transactions.
    */
-  getMultisigTransaction = async (multisig: any, transaction: PublicKey, owner: PublicKey): Promise<MultisigTransaction | null> => {
+  getMultisigTransaction = async (multisig: PublicKey, transaction: PublicKey, owner: PublicKey): Promise<MultisigTransaction | null> => {
 
     try {
 
@@ -132,12 +132,12 @@ export class MeanMultisig implements Multisig {
 
       if (!multisigAcc) { throw Error(`Multisig account ${multisig.toBase58()} not found`); }
 
-      const transactionAcc: any = await this.program.account.transaction.fetchNullable(transaction);
+      const transactionAcc = await this.program.account.transaction.fetchNullable(transaction);
 
       if (!transactionAcc) { throw Error(`Transaction account ${transaction.toBase58()} not found`); }
 
       const [txDetailAddress] = await PublicKey.findProgramAddress(
-        [multisig.toBuffer(), transactionAcc.publicKey.toBuffer()],
+        [multisig.toBuffer(), transaction.toBuffer()],
         this.program.programId
       );
 
