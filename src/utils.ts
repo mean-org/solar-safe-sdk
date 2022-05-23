@@ -89,7 +89,7 @@ export const getTransactionStatus = (
       return MultisigTransactionStatus.Expired;
     }
 
-    if (multisig.ownerSeqNumber !== info.account.ownerSeqNumber) {
+    if (multisig.ownerSeqNumber !== info.account.ownerSetSeqno) {
       return MultisigTransactionStatus.Voided;
     }
 
