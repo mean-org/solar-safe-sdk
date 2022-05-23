@@ -89,14 +89,14 @@ export const getTransactionStatus = (
       return MultisigTransactionStatus.Expired;
     }
 
+    if (multisig.ownerSeqNumber !== info.account.ownerSeqNumber) {
+      return MultisigTransactionStatus.Voided;
+    }
+
     let approvals = info.account.signers.filter((s: boolean) => s).length;
 
     if (multisig.threshold == approvals) {
       return MultisigTransactionStatus.Approved;
-    }
-
-    if (multisig.ownerSeqNumber !== info.account.ownerSeqNumber) {
-      return MultisigTransactionStatus.Voided;
     }
 
     return MultisigTransactionStatus.Pending;
