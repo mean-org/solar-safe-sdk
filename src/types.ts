@@ -65,7 +65,7 @@ export type MultisigInfo = {
   owners: MultisigParticipant[];
   threshold: number;
   nounce: number;
-  ownerSeqNumber: number;
+  ownerSetSeqno: number;
   createdOnUtc: Date;
   pendingTxsAmount: number;
   version: number;
@@ -84,7 +84,7 @@ export type MultisigTransaction = {
   signers: boolean[];
   createdOn: Date;
   executedOn: Date | undefined;
-  ownerSeqNumber: number;
+  ownerSetSeqno: number;
   status: MultisigTransactionStatus;
   accounts: any[];
   data: Buffer;
