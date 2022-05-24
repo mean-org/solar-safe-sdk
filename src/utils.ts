@@ -89,7 +89,7 @@ export const getTransactionStatus = (
       return MultisigTransactionStatus.Expired;
     }
 
-    if (multisig.ownerSeqNumber !== info.account.ownerSetSeqno) {
+    if (multisig.ownerSetSeqno !== info.account.ownerSetSeqno) {
       return MultisigTransactionStatus.Voided;
     }
 
@@ -157,7 +157,7 @@ export const parseMultisigV1Account = async (
       label: new TextDecoder().decode(labelBuffer),
       authority: multisigSigner,
       nounce: info.account.nonce,
-      ownerSeqNumber: info.account.ownerSetSeqno,
+      ownerSetSeqno: info.account.ownerSetSeqno,
       threshold: info.account.threshold.toNumber(),
       pendingTxsAmount: info.account.pendingTxs.toNumber(),
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
@@ -228,7 +228,7 @@ export const parseMultisigV2Account = async (
       label: new TextDecoder().decode(labelBuffer),
       authority: multisigSigner,
       nounce: info.account.nonce,
-      ownerSeqNumber: info.account.ownerSetSeqno,
+      ownerSetSeqno: info.account.ownerSetSeqno,
       threshold: info.account.threshold.toNumber(),
       pendingTxsAmount: info.account.pendingTxs.toNumber(),
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
@@ -272,7 +272,7 @@ export const parseMultisigTransaction = (
       multisig: txInfo.account.multisig,
       programId: txInfo.account.programId,
       signers: txInfo.account.signers,
-      ownerSeqNumber: txInfo.account.ownerSetSeqno,
+      ownerSetSeqno: txInfo.account.ownerSetSeqno,
       createdOn: new Date(txInfo.account.createdOn.toNumber() * 1000),
       executedOn:
         txInfo.account.executedOn && txInfo.account.executedOn > 0
