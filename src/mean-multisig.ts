@@ -98,6 +98,7 @@ export class MeanMultisig implements Multisig {
         }
 
         if (parsedMultisig) {
+          parsedMultisig["balance"] = await this.connection.getBalance(parsedMultisig.id);
           multisigInfoArray.push(parsedMultisig);
         }
       }

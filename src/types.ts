@@ -61,6 +61,7 @@ export type MultisigInfo = {
   id: PublicKey;
   label: string;
   description?: string;
+  balance: number;
   authority: PublicKey;
   owners: MultisigParticipant[];
   threshold: number;
