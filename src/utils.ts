@@ -233,6 +233,7 @@ export const parseMultisigV2Account = async (
       pendingTxsAmount: info.account.pendingTxs.toNumber(),
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
       owners: owners,
+      balance: 0
 
     } as MultisigInfo;
 
