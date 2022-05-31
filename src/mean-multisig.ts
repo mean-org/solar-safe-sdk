@@ -57,6 +57,51 @@ export class MeanMultisig implements Multisig {
   }
 
   /**
+   * Gets the parsed multisig info of a specific multisig account address. 
+   * 
+   * @public
+   * @param {PublicKey} id - The address of the multisig account.
+   * @returns {Promise<MultisigInfo>} Returns a parsed multisig account.
+   */
+   getMultisig = async (address: PublicKey): Promise<MultisigInfo | null> => {
+
+    try {
+      
+      let multisigAcc = await this.program.account.multisigV2.fetchNullable(address);
+
+      if (!multisigAcc) {
+        multisigAcc = await this.program.account.multisig.fetchNullable(address);
+
+        if (!multisigAcc) { return null; }
+      }
+
+      let parsedMultisig: any;
+
+      if (multisigAcc.version && multisigAcc.version === 2) {
+        parsedMultisig = await parseMultisigV2Account(this.program.programId, {
+          publicKey: address,
+          account: multisigAcc
+        });
+      } else {
+        parsedMultisig = await parseMultisigV1Account(this.program.programId, {
+          publicKey: address,
+          account: multisigAcc
+        });
+      }
+
+      if (!parsedMultisig) { return null; }
+
+      parsedMultisig["balance"] = await this.connection.getBalance(parsedMultisig.authority);
+
+      return parsedMultisig;
+
+    } catch (err: any) {
+      console.error(`Get Multisig: ${err}`);
+      return null;
+    }
+  }
+
+  /**
    * Gets the multisigs for where a specific owner belongs to. 
    * If owner is undefined then gets all multisig accounts of the program.
    * 
