@@ -1,8 +1,8 @@
-import { AnchorProvider, BN, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
-import { AccountMeta, Commitment, Connection, ConnectionConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
+import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
-import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction } from "./types";
-import { parseMultisigTransaction, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
+import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
+import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
 import idl from "./idl";
 
 /**
@@ -249,6 +249,84 @@ export class MeanMultisig implements Multisig {
       
     } catch (err: any) {
       console.error(`List Multisig Transactions: ${err}`);
+      return [];
+    }
+  }
+
+  /**
+   * Gets the list of activities of a specific transaction . 
+   * 
+   * @public
+   * @param {PublicKey} transaction - The transaction account.
+   * @param {string=} before - The item signature to start getting signatures from.
+   * @param {number=} limit - The mac amount of items to retrieve.
+   * @param {Finality | undefined} commitment - The transaction account.
+   * @returns {Promise<MultisigTransactionActivityItem[]>} Returns a list of parsed multisig transaction activity.
+   */
+  getMultisigTransactionActivity = async (
+    transaction: PublicKey,
+    before: string = '',
+    limit: number = 10,
+    commitment?: Finality | undefined,
+
+  ): Promise<any[]> => {
+    
+    try {
+
+      const transactionAcc: any = await this.program.account.transaction.fetchNullable(transaction);
+
+      if (!transactionAcc) { throw Error(`Transaction account ${transaction.toBase58()} not found`); }
+
+      const multisigAcc: any = await this.program.account.multisigV2.fetchNullable(transactionAcc.multisig);
+
+      if (!multisigAcc) { throw Error(`Multisig account ${transactionAcc.multisig.toBase58()} not found`); }
+
+      let activity: MultisigTransactionActivityItem[] = [];
+      let finality = commitment !== undefined ? commitment : "finalized";
+      let filter = { limit: limit } as ConfirmedSignaturesForAddress2Options;
+
+      if (before) { filter['before'] = before };
+
+      let signatures = await this
+        .program
+        .provider
+        .connection
+        .getConfirmedSignaturesForAddress2(
+          transaction, 
+          filter, 
+          finality
+        );
+
+      let txs = await this
+        .program
+        .provider
+        .connection
+        .getParsedTransactions(
+          signatures.map((s: any) => s.signature), 
+          finality
+        );
+      
+      const coder = new BorshInstructionCoder(this.program.idl);
+
+      for (const tx of txs) {
+        if (!tx) { continue; }
+        const item = parseMultisigTransactionActivity(
+          coder,
+          multisigAcc.owners,
+          tx
+        );
+        if (item) {
+          activity.push(item);
+        }
+      }
+
+      const sorted = activity.sort((a, b) => b.createdOn.getTime() - a.createdOn.getTime());
+      sorted.forEach((item, index) => { item.index = index });
+
+      return activity;
+
+    } catch (err: any) {
+      console.error(`List Multisig Transaction Activity: ${err}`);
       return [];
     }
   }

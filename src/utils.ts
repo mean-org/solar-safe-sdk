@@ -1,6 +1,9 @@
-import { Enum, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { Idl, Program } from "@project-serum/anchor";
+import { LAMPORTS_PER_SOL, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from "@solana/web3.js";
+import { Idl, Instruction, Program } from "@project-serum/anchor";
 import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruction, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummary, MULTISIG_ACTIONS } from "./types";
+import { MultisigTransactionActivityItem } from "./types";
+import { ParsedInstruction } from "@solana/web3.js";
+import { BorshInstructionCoder, InstructionDisplay } from "@project-serum/anchor/dist/cjs/coder/borsh/instruction";
 
 /**
  * Gets the multisig actions fees.
@@ -297,6 +300,74 @@ export const parseMultisigTransaction = (
     throw Error(`Multisig Transaction Error: ${err}`);
   }
 };
+
+/**
+ * Parses the multisig transaction activity item.
+ * 
+ * @param {any} coder - BorchSerializerCoder
+ * @param {any[]} owners - The owners of the Multisig account of the proposal
+ * @param {ParsedTransactionWithMeta} parsedTx - Pased transaction meta 
+ * @returns {MultisigTransactionActivityItem} Returns a MultisigTransactionActivityItem object
+ */
+export const parseMultisigTransactionActivity = (
+  coder: any,
+  owners: any[],
+  parsedTx: ParsedTransactionWithMeta
+
+): MultisigTransactionActivityItem | null => {
+
+  let item: any = null;
+
+  if (parsedTx.transaction.message.instructions.length === 0) {
+    return item;
+  }
+
+  const ix = parsedTx.transaction.message.instructions.length === 1 
+    ? parsedTx.transaction.message.instructions[0] as PartiallyDecodedInstruction
+    : parsedTx.transaction.message.instructions.length === 2
+    ? parsedTx.transaction.message.instructions[1] as PartiallyDecodedInstruction
+    : null;
+
+  if (!ix) { return null; }
+
+  const decodedIx = coder.decode(ix.data, "base58");
+
+  if (!decodedIx) { return null; }
+
+  const action = decodedIx.name === "createTransaction"
+    ? "created" 
+    : decodedIx.name === "approve"
+    ? "approved"
+    : decodedIx.name === "executeTransaction"
+    ? "executed"
+    : decodedIx.name === "executeTransactionPda"
+    ? "executed"
+    : decodedIx.name === "cancelTransaction"
+    ? "deleted"
+    : "rejected";
+
+  const ownerInfo = owners.filter((o: any) => ix.accounts.some(a => a.equals(o.address)))[0];
+
+  item = {
+    index: 0,
+    address: parsedTx.transaction.signatures[0],
+    action: action,
+    createdOn: new Date(parsedTx.blockTime as number * 1_000),
+    owner: !ownerInfo ? null : {
+      address: ownerInfo.address.toBase58(),
+      name: new TextDecoder('utf8')
+        .decode(
+          Buffer.from(
+            Uint8Array.of(
+              ...ownerInfo.name.filter((i: number) => i !== 0)
+            )
+          )
+        ).trim()
+    }
+  } as MultisigTransactionActivityItem;
+
+  return item;
+}
 
 /**
  * Parses the multisig transaction detail account.

@@ -97,6 +97,19 @@ export type MultisigTransaction = {
 };
 
 /**
+ * `MultisigTransactionActivity` type definition
+ * 
+ * @type {MultisigTransactionActivityItem}
+ */
+export type MultisigTransactionActivityItem = {
+  index: number;
+  address: string;
+  action: string;
+  createdOn: Date;
+  owner: any;
+}
+
+/**
  * `MultisigParticipant` type definition
  * 
  * @type {MultisigParticipant}
