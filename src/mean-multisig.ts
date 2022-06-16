@@ -1,5 +1,5 @@
 import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
-import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
@@ -123,25 +123,10 @@ export class MeanMultisig implements Multisig {
       });
 
       accounts.push(...filteredAccs);
-      let multisigAccs = await this.program.account.multisig.all();
-      filteredAccs = multisigAccs.filter((a: any) => {
-        if (owner && a.account.owners.filter((o: PublicKey) => o.equals(owner)).length) {
-          return true;
-        }
-        return false;
-      });
-
-      accounts.push(...filteredAccs);
       let multisigInfoArray: MultisigInfo[] = [];
 
       for (let info of accounts) {
-        let parsedMultisig: any;
-        if (info.account.version && info.account.version === 2) {
-          parsedMultisig = await parseMultisigV2Account(this.program.programId, info);
-        } else {
-          parsedMultisig = await parseMultisigV1Account(this.program.programId, info);
-        }
-
+        const parsedMultisig = await parseMultisigV2Account(this.program.programId, info);
         if (parsedMultisig) {
           parsedMultisig["balance"] = await this.connection.getBalance(parsedMultisig.authority);
           multisigInfoArray.push(parsedMultisig);
@@ -220,13 +205,18 @@ export class MeanMultisig implements Multisig {
 
       if (!multisigAcc) { throw Error(`Multisig account ${multisig.toBase58()} not found`); }
 
-      let filters: GetProgramAccountsFilter[] = [
+      let txFilters: GetProgramAccountsFilter[] = [
         { dataSize: 1200 },
         { memcmp: { offset: 8, bytes: multisig.toString() } },
       ];
 
+      const promises = [
+        this.program.account.transaction.all(txFilters),
+        this.program.account.transactionDetail.all()
+      ];
+
+      const [txs, details] = await Promise.all(promises);
       let transactions: MultisigTransaction[] = [];
-      let txs = await this.program.account.transaction.all(filters);
 
       for (let tx of txs) {
           
@@ -236,9 +226,12 @@ export class MeanMultisig implements Multisig {
           this.program.programId
         );
 
-        const txDetail = await this.program.account.transactionDetail.fetchNullable(txDetailAddress);
-        let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
-        transactions.push(txInfo);
+        const detail = details.filter(d => d.publicKey.equals(txDetailAddress))[0];
+
+        if (detail) {
+          let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, detail);
+          transactions.push(txInfo);
+        }
       }
 
       const sortedTxs = transactions.sort(
