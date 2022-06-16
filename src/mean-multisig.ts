@@ -229,7 +229,7 @@ export class MeanMultisig implements Multisig {
         const detail = details.filter(d => d.publicKey.equals(txDetailAddress))[0];
 
         if (detail) {
-          let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, detail);
+          let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, detail.account);
           transactions.push(txInfo);
         }
       }
