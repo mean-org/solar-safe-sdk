@@ -383,6 +383,72 @@ export class MeanMultisig implements Multisig {
   };
 
   /**
+   * Creates a new multisig account with funds
+   *
+   * @public
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {number} lamports - The amount of lamports to fund the multisig.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   */
+  createFundedMultisig = async (
+    payer: PublicKey,
+    lamports: number,
+    label: string,
+    threshold: number,
+    participants: MultisigParticipant[]
+
+  ): Promise<Transaction | null> => {
+
+    try {
+
+      const multisig = Keypair.generate();
+      const [multisigSigner, nonce] = await PublicKey.findProgramAddress(
+        [multisig.publicKey.toBuffer()],
+        this.program.programId
+      );
+
+      const owners = participants.map((p: MultisigParticipant) => {
+        return {
+          address: new PublicKey(p.address),
+          name: p.name,
+        };
+      });
+
+      let tx = await this.program.methods
+        .createMultisig(owners, new BN(threshold), nonce, label)
+        .accounts({
+          proposer: payer,
+          multisig: multisig.publicKey,
+          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([multisig])
+        .postInstructions([
+          SystemProgram.transfer({
+            fromPubkey: payer,
+            toPubkey: multisigSigner,
+            lamports: lamports
+          })
+        ])
+        .transaction();
+
+      tx.feePayer = payer;
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
+      tx.recentBlockhash = blockhash;
+      tx.partialSign(...[multisig]);
+
+      return tx;
+
+    } catch (err: any) {
+      console.error(`Create Multisig: ${err}`);
+      return null;
+    }
+  };
+
+  /**
    * Creates a multisig transaction proposal
    *
    * @public
