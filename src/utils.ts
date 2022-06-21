@@ -283,9 +283,11 @@ export const parseMultisigTransaction = (
     );
 
     const signers: (boolean | null)[] = [];
+    const allSigners = txInfo.account.signers
+      .slice(0, multisig.owners.filter((o: any) => !o.address.equals(PublicKey.default)).length);
 
-    for (const s of txInfo.account.signers.values()) {
-      signers.push((s == 0 ? null : (s == 1 ? true : false)));
+    for (const s of allSigners) {
+      signers.push((s === 0 ? null : (s === 1 ? true : false)));
     }
 
     return Object.assign({}, {
