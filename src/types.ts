@@ -82,7 +82,7 @@ export type MultisigTransaction = {
   operation: number;
   multisig: PublicKey;
   programId: PublicKey;
-  signers: boolean[];
+  signers: (boolean | undefined)[];
   createdOn: Date;
   executedOn: Date | undefined;
   ownerSetSeqno: number;
