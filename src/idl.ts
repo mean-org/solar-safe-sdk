@@ -1,7 +1,7 @@
 import { Idl } from "@project-serum/anchor";
 
 const idl: Idl = {
-  version: "1.12.1",
+  version: "1.13.0",
   name: "mean_multisig",
   instructions: [
     {
@@ -194,6 +194,37 @@ const idl: Idl = {
     },
     {
       "name": "approve",
+      "accounts": [
+        {
+          "name": "multisig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "transaction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "transactionDetail",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "reject",
       "accounts": [
         {
           "name": "multisig",
@@ -428,9 +459,7 @@ const idl: Idl = {
           },
           {
             "name": "signers",
-            "type": {
-              "vec": "bool"
-            }
+            "type": "bytes"
           },
           {
             "name": "ownerSetSeqno",
