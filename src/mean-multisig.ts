@@ -1,5 +1,5 @@
-import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, Provider, Wallet } from "@project-serum/anchor";
-import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AnchorProvider, BN, BorshAccountsCoder, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider, Wallet } from "@project-serum/anchor";
+import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemInstruction, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
@@ -206,7 +206,6 @@ export class MeanMultisig implements Multisig {
       if (!multisigAcc) { throw Error(`Multisig account ${multisig.toBase58()} not found`); }
 
       let txFilters: GetProgramAccountsFilter[] = [
-        { dataSize: 1200 },
         { memcmp: { offset: 8, bytes: multisig.toString() } },
       ];
 
@@ -214,19 +213,18 @@ export class MeanMultisig implements Multisig {
         this.program.account.transaction.all(txFilters),
         this.program.account.transactionDetail.all()
       ];
-
+    
       const [txs, details] = await Promise.all(promises);
       let transactions: MultisigTransaction[] = [];
 
       for (let tx of txs) {
           
-        const multisigAddress = multisig ?? new PublicKey(tx.account.multisig as PublicKeyInitData);
         const [txDetailAddress] = await PublicKey.findProgramAddress(
-          [multisigAddress.toBuffer(), tx.publicKey.toBuffer()],
+          [multisig.toBuffer(), tx.publicKey.toBuffer()],
           this.program.programId
         );
 
-        const detail = details.filter(d => d.publicKey.equals(txDetailAddress))[0];
+        const detail = details.filter((d: ProgramAccount) => d.publicKey.equals(txDetailAddress))[0];
 
         if (detail) {
           let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, detail.account);
@@ -367,6 +365,72 @@ export class MeanMultisig implements Multisig {
           systemProgram: SystemProgram.programId,
         })
         .signers([multisig])
+        .transaction();
+
+      tx.feePayer = payer;
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
+      tx.recentBlockhash = blockhash;
+      tx.partialSign(...[multisig]);
+
+      return tx;
+
+    } catch (err: any) {
+      console.error(`Create Multisig: ${err}`);
+      return null;
+    }
+  };
+
+  /**
+   * Creates a new multisig account with funds
+   *
+   * @public
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {number} lamports - The amount of lamports to fund the multisig.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   */
+  createFundedMultisig = async (
+    payer: PublicKey,
+    lamports: number,
+    label: string,
+    threshold: number,
+    participants: MultisigParticipant[]
+
+  ): Promise<Transaction | null> => {
+
+    try {
+
+      const multisig = Keypair.generate();
+      const [multisigSigner, nonce] = await PublicKey.findProgramAddress(
+        [multisig.publicKey.toBuffer()],
+        this.program.programId
+      );
+
+      const owners = participants.map((p: MultisigParticipant) => {
+        return {
+          address: new PublicKey(p.address),
+          name: p.name,
+        };
+      });
+
+      let tx = await this.program.methods
+        .createMultisig(owners, new BN(threshold), nonce, label)
+        .accounts({
+          proposer: payer,
+          multisig: multisig.publicKey,
+          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([multisig])
+        .postInstructions([
+          SystemProgram.transfer({
+            fromPubkey: payer,
+            toPubkey: multisigSigner,
+            lamports: lamports
+          })
+        ])
         .transaction();
 
       tx.feePayer = payer;
@@ -656,6 +720,60 @@ export class MeanMultisig implements Multisig {
 
     } catch (err: any) {
       console.error(`Approve Transaction: ${err}`);
+      return null;
+    }
+  };
+
+  /**
+   * Rejects a multisig transaction proposal
+   *
+   * @public
+   * @param {PublicKey} owner - One of the owners of the transaction proposal.
+   * @param {PublicKey} transaction - The transaction proposal to be approved.
+   * @returns {Promise<Transaction | null>} Returns a transaction for rejecting the transaction proposal.
+   */
+   rejectTransaction = async (
+    owner: PublicKey,
+    transaction: PublicKey
+
+  ): Promise<Transaction | null> => {
+      
+    try {
+
+      const txAccount = await this.program.account.transaction.fetchNullable(
+        transaction,
+        this.connection.commitment
+      );
+
+      if (!txAccount) {
+        throw Error("Transaction proposal not found");
+      }
+
+      const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
+      const [txDetailAddress] = await PublicKey.findProgramAddress(
+        [multisig.toBuffer(), transaction.toBuffer()],
+        this.program.programId
+      );
+
+      let tx = await this.program.methods
+        .reject()
+        .accounts({
+          multisig: multisig,
+          transaction: transaction,
+          transactionDetail: txDetailAddress,
+          owner: owner,
+          systemProgram: SystemProgram.programId,
+        })
+        .transaction();
+
+      tx.feePayer = owner;
+      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
+      tx.recentBlockhash = blockhash;
+
+      return tx;
+
+    } catch (err: any) {
+      console.error(`Reject Transaction: ${err}`);
       return null;
     }
   };

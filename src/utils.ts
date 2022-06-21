@@ -96,10 +96,21 @@ export const getTransactionStatus = (
       return MultisigTransactionStatus.Voided;
     }
 
-    let approvals = info.account.signers.filter((s: boolean) => s).length;
+    let approvals = info.account.signers.filter((s: number) => s === 1).length;
 
     if (multisig.threshold == approvals) {
       return MultisigTransactionStatus.Approved;
+    }
+
+    let filteredOwners = multisig.owners.filter(
+      (o: any) => !o.address.equals(PublicKey.default)
+    );
+
+    let rejections = info.account.signers.filter((s: number) => s === 2).length;
+    let max_aprovals = filteredOwners.filter((o: any) => o !== null).length - rejections;
+
+    if (max_aprovals < multisig.threshold) {
+      return MultisigTransactionStatus.Rejected;
     }
 
     return MultisigTransactionStatus.Pending;
@@ -271,11 +282,17 @@ export const parseMultisigTransaction = (
       (o: any) => o.address.toBase58() === owner.toBase58()
     );
 
+    const signers: (boolean | null)[] = [];
+
+    for (const s of txInfo.account.signers.values()) {
+      signers.push((s == 0 ? null : (s == 1 ? true : false)));
+    }
+
     return Object.assign({}, {
       id: txInfo.publicKey,
       multisig: txInfo.account.multisig,
       programId: txInfo.account.programId,
-      signers: txInfo.account.signers,
+      signers: signers,
       ownerSetSeqno: txInfo.account.ownerSetSeqno,
       createdOn: new Date(txInfo.account.createdOn.toNumber() * 1000),
       executedOn:
@@ -285,7 +302,7 @@ export const parseMultisigTransaction = (
       status: getTransactionStatus(multisig, txInfo, txDetailInfo) as number,
       operation: txInfo.account.operation,
       accounts: txInfo.account.accounts,
-      didSigned: txInfo.account.signers[ownerIndex],
+      didSigned: signers[ownerIndex],
       proposer: txInfo.account.proposer,
       pdaTimestamp: txInfo.account.pdaTimestamp
         ? txInfo.account.pdaTimestamp.toNumber()

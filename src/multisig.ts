@@ -76,6 +76,15 @@ export interface Multisig {
     approveTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction | null>,
 
     /**
+     * Rejects a multisig transaction proposal
+     *
+     * @param {PublicKey} owner - One of the owners of the transaction proposal.
+     * @param {PublicKey} transaction - The transaction proposal to be approved.
+     * @returns {Promise<Transaction | null>} Returns a transaction for approving the transaction proposal.
+     */
+     rejectTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction | null>,
+
+    /**
      * Executes a multisig transaction proposal
      *
      * @public
