@@ -82,7 +82,7 @@ export type MultisigTransaction = {
   operation: number;
   multisig: PublicKey;
   programId: PublicKey;
-  signers: (boolean | undefined)[];
+  signers: (boolean | null)[];
   createdOn: Date;
   executedOn: Date | undefined;
   ownerSetSeqno: number;
@@ -93,7 +93,7 @@ export type MultisigTransaction = {
   pdaTimestamp: number | undefined;
   pdaBump: number | undefined;
   details: MultisigTransactionDetail;
-  didSigned: boolean;
+  didSigned: boolean | null;
 };
 
 /**
