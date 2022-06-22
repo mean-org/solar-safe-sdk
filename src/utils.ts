@@ -99,7 +99,7 @@ export const getTransactionStatus = (
     let approvals = info.account.signers.filter((s: number) => s === 1).length;
 
     if (multisig.threshold == approvals) {
-      return MultisigTransactionStatus.Approved;
+      return MultisigTransactionStatus.Passed;
     }
 
     let filteredOwners = multisig.owners.filter(
@@ -110,10 +110,10 @@ export const getTransactionStatus = (
     let max_aprovals = filteredOwners.filter((o: any) => o !== null).length - rejections;
 
     if (max_aprovals < multisig.threshold) {
-      return MultisigTransactionStatus.Rejected;
+      return MultisigTransactionStatus.Failed;
     }
 
-    return MultisigTransactionStatus.Pending;
+    return MultisigTransactionStatus.Active;
 
   } catch (err) {
     throw Error(`Multisig Transaction Status: ${err}`);
