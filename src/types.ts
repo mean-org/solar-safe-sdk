@@ -12,18 +12,18 @@ export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
  */
 export enum MultisigTransactionStatus {
   /** No enough signatures */
-  Pending = 0,
+  Active = 0,
   /** Approved by the required amount of signers */
-  Approved = 1,
-  /** Successfully executed (didExecute = true) */
+  Passed = 1,
+  /** Successfully executed */
   Executed = 2,
-  /** Rejected by any owner */
-  Rejected = 3,
+  /** Rejected by the majority of owners */
+  Failed = 3,
   /** Invalid owners set seq number */
   Voided = 4,
   /** Proposal has expired */
   Expired = 5,
-  /** Pending for exxecution */
+  /** Pending for execution */
   Queued = 6,
 }
 
