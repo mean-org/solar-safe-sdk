@@ -916,7 +916,7 @@ export class MeanMultisig implements Multisig {
           isSigner: false,
         });
 
-      const streamPda = remainingAccounts[7].pubkey;
+      const streamPda = remainingAccounts[6].pubkey;
 
       let tx = await this.program.methods
         .executeTransactionPda()
