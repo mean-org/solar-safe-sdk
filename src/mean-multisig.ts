@@ -1,9 +1,10 @@
-import { AnchorProvider, BN, BorshAccountsCoder, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider, Wallet } from "@project-serum/anchor";
-import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsConfig, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemInstruction, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider } from "@project-serum/anchor";
+import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
 import idl from "./idl";
+import { utf8 } from '@project-serum/anchor/dist/cjs/utils/bytes'
 
 /**
  * MeanMultisig class implementation
@@ -11,7 +12,7 @@ import idl from "./idl";
  * @implements {Multisig}
  */
 export class MeanMultisig implements Multisig {
-  
+
   /** @private */
   rpcUrl: string;
   /** @private */
@@ -20,7 +21,8 @@ export class MeanMultisig implements Multisig {
   provider: Provider;
   /** @private */
   connection: Connection;
-
+  /** @private */
+  settings: PublicKey | undefined;
   /**
    * MeanMultisig class ctor. Intitialize program and connection.
    * 
@@ -45,6 +47,9 @@ export class MeanMultisig implements Multisig {
     this.connection = new Connection(this.rpcUrl, commitment || opts.commitment);
     this.provider = new AnchorProvider(this.connection, anchorWallet, opts);
     this.program = new Program(idl, MEAN_MULTISIG_PROGRAM, this.provider);
+    PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId)
+            .then(([address]) => { this.settings = address; })
+            .catch((err) => console.error(err));
   }
 
   /**
@@ -63,10 +68,10 @@ export class MeanMultisig implements Multisig {
    * @param {PublicKey} id - The address of the multisig account.
    * @returns {Promise<MultisigInfo>} Returns a parsed multisig account.
    */
-   getMultisig = async (address: PublicKey): Promise<MultisigInfo | null> => {
+  getMultisig = async (address: PublicKey): Promise<MultisigInfo | null> => {
 
     try {
-      
+
       let multisigAcc = await this.program.account.multisigV2.fetchNullable(address);
 
       if (!multisigAcc) {
@@ -181,7 +186,7 @@ export class MeanMultisig implements Multisig {
       const txInfo = parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
 
       return txInfo;
-      
+
     } catch (err: any) {
       console.error(`Get Multisig Transaction: ${err}`);
       return null;
@@ -213,12 +218,12 @@ export class MeanMultisig implements Multisig {
         this.program.account.transaction.all(txFilters),
         this.program.account.transactionDetail.all()
       ];
-    
+
       const [txs, details] = await Promise.all(promises);
       let transactions: MultisigTransaction[] = [];
 
       for (let tx of txs) {
-          
+
         const [txDetailAddress] = await PublicKey.findProgramAddress(
           [multisig.toBuffer(), tx.publicKey.toBuffer()],
           this.program.programId
@@ -237,7 +242,7 @@ export class MeanMultisig implements Multisig {
       );
 
       return sortedTxs;
-      
+
     } catch (err: any) {
       console.error(`List Multisig Transactions: ${err}`);
       return [];
@@ -261,7 +266,7 @@ export class MeanMultisig implements Multisig {
     commitment?: Finality | undefined,
 
   ): Promise<any[]> => {
-    
+
     try {
 
       const transactionAcc: any = await this.program.account.transaction.fetchNullable(transaction);
@@ -283,8 +288,8 @@ export class MeanMultisig implements Multisig {
         .provider
         .connection
         .getConfirmedSignaturesForAddress2(
-          transaction, 
-          filter, 
+          transaction,
+          filter,
           finality
         );
 
@@ -293,10 +298,10 @@ export class MeanMultisig implements Multisig {
         .provider
         .connection
         .getParsedTransactions(
-          signatures.map((s: any) => s.signature), 
+          signatures.map((s: any) => s.signature),
           finality
         );
-      
+
       const coder = new BorshInstructionCoder(this.program.idl);
 
       for (const tx of txs) {
@@ -348,7 +353,9 @@ export class MeanMultisig implements Multisig {
         [multisig.publicKey.toBuffer()],
         this.program.programId
       );
-
+      if (!this.settings) {
+        this.settings = (await PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId))[0];
+      }
       const owners = participants.map((p: MultisigParticipant) => {
         return {
           address: new PublicKey(p.address),
@@ -361,7 +368,8 @@ export class MeanMultisig implements Multisig {
         .accounts({
           proposer: payer,
           multisig: multisig.publicKey,
-          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          opsAccount: MEAN_MULTISIG_OPS,
+          settings: this.settings,
           systemProgram: SystemProgram.programId,
         })
         .signers([multisig])
@@ -407,7 +415,9 @@ export class MeanMultisig implements Multisig {
         [multisig.publicKey.toBuffer()],
         this.program.programId
       );
-
+      if (!this.settings) {
+        this.settings = (await PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId))[0];
+      }
       const owners = participants.map((p: MultisigParticipant) => {
         return {
           address: new PublicKey(p.address),
@@ -420,7 +430,8 @@ export class MeanMultisig implements Multisig {
         .accounts({
           proposer: payer,
           multisig: multisig.publicKey,
-          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          opsAccount: MEAN_MULTISIG_OPS,
+          settings: this.settings,
           systemProgram: SystemProgram.programId,
         })
         .signers([multisig])
@@ -476,7 +487,9 @@ export class MeanMultisig implements Multisig {
   ): Promise<Transaction | null> => {
 
     try {
-
+      if (!this.settings) {
+        this.settings = (await PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId))[0];
+      }
       const transaction = Keypair.generate();
       const txSize = 1200;
       const createIx = await this.program.account.transaction.createInstruction(
@@ -510,7 +523,8 @@ export class MeanMultisig implements Multisig {
           transaction: transaction.publicKey,
           transactionDetail: txDetailAddress,
           proposer: proposer,
-          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          opsAccount: MEAN_MULTISIG_OPS,
+          settings: this.settings,
           systemProgram: SystemProgram.programId,
         })
         .preInstructions([...preInstructions, createIx])
@@ -562,7 +576,9 @@ export class MeanMultisig implements Multisig {
   ): Promise<Transaction | null> => {
 
     try {
-
+      if (!this.settings) {
+        this.settings = (await PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId))[0];
+      }
       const transaction = Keypair.generate();
       const txSize = 1200;
       const createIx = await this.program.account.transaction.createInstruction(
@@ -596,7 +612,8 @@ export class MeanMultisig implements Multisig {
           transaction: transaction.publicKey,
           transactionDetail: txDetailAddress,
           proposer: proposer,
-          multisigOpsAccount: MEAN_MULTISIG_OPS,
+          opsAccount: MEAN_MULTISIG_OPS,
+          settings: this.settings,
           systemProgram: SystemProgram.programId,
         })
         .preInstructions([...preInstructions, createIx])
@@ -683,7 +700,7 @@ export class MeanMultisig implements Multisig {
     transaction: PublicKey
 
   ): Promise<Transaction | null> => {
-      
+
     try {
 
       const txAccount = await this.program.account.transaction.fetchNullable(
@@ -732,12 +749,12 @@ export class MeanMultisig implements Multisig {
    * @param {PublicKey} transaction - The transaction proposal to be approved.
    * @returns {Promise<Transaction | null>} Returns a transaction for rejecting the transaction proposal.
    */
-   rejectTransaction = async (
+  rejectTransaction = async (
     owner: PublicKey,
     transaction: PublicKey
 
   ): Promise<Transaction | null> => {
-      
+
     try {
 
       const txAccount = await this.program.account.transaction.fetchNullable(
@@ -902,7 +919,7 @@ export class MeanMultisig implements Multisig {
       const streamPda = remainingAccounts[7].pubkey;
 
       let tx = await this.program.methods
-        .executeTransactionPda(txAccount.pdaTimestamp, txAccount.pdaBump)
+        .executeTransactionPda()
         .accounts({
           multisig: multisig,
           multisigSigner: multisigSigner,
