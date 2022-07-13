@@ -1,10 +1,10 @@
 {
   "name": "@mean-dao/mean-multisig-sdk",
-  "version": "1.15.0",
+  "version": "1.16.0-alpha.1",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "lib/index.js",
   "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
-  "author": "Yansel <yanselfgok@gmail.com>",
+  "author": "Mean Labs <support@supermean.com>",
   "license": "MIT",
   "private": false,
   "keywords": [
