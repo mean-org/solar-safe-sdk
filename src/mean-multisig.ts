@@ -881,6 +881,43 @@ export class MeanMultisig implements Multisig {
     owner: PublicKey,
     transaction: PublicKey
 
+  ): Promise<Transaction | null> => await this.executeCreateMoneyStreamTransactionImpl(
+    owner,
+    transaction,
+    6 // index of the stream account in the create_stream_with_template
+  )
+
+  /**
+   * Executes a multisig transaction proposal (Special case for Money Stream creation with template)
+   *
+   * @public
+   * @param {PublicKey} owner - One of the owners of the `Create Money Stream` transaction proposal.
+   * @param {PublicKey} transaction - The `Create Money Stream` transaction proposal to be executed.
+   * @returns {Promise<Transaction | null>} Returns a transaction for executing a `Create Money Stream` transaction proposal.
+   */
+  executeCreateMoneyStreamWithTemplateTransaction = async (
+    owner: PublicKey,
+    transaction: PublicKey
+
+  ): Promise<Transaction | null> => await this.executeCreateMoneyStreamTransactionImpl(
+    owner,
+    transaction,
+    7 // index of the stream account in the create_stream_with_template
+  )
+
+  /**
+   * Executes a multisig transaction proposal (Special case for Money Stream creation)
+   *
+   * @public
+   * @param {PublicKey} owner - One of the owners of the `Create Money Stream` transaction proposal.
+   * @param {PublicKey} transaction - The `Create Money Stream` transaction proposal to be executed.
+   * @returns {Promise<Transaction | null>} Returns a transaction for executing a `Create Money Stream` transaction proposal.
+   */
+  executeCreateMoneyStreamTransactionImpl = async (
+    owner: PublicKey,
+    transaction: PublicKey,
+    streamAccountIndex: number
+
   ): Promise<Transaction | null> => {
 
     try {
@@ -916,7 +953,7 @@ export class MeanMultisig implements Multisig {
           isSigner: false,
         });
 
-      const streamPda = remainingAccounts[6].pubkey;
+      const streamPda = remainingAccounts[streamAccountIndex].pubkey;
 
       let tx = await this.program.methods
         .executeTransactionPda()
