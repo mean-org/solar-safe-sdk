@@ -1,7 +1,7 @@
 import { Idl } from "@project-serum/anchor";
 
 const idl: Idl = {
-  version: "1.13.0",
+  version: "1.14.0",
   name: "mean_multisig",
   instructions: [
     {
@@ -18,8 +18,13 @@ const idl: Idl = {
           "isSigner": true
         },
         {
-          "name": "multisigOpsAccount",
+          "name": "opsAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -108,8 +113,13 @@ const idl: Idl = {
           "isSigner": true
         },
         {
-          "name": "multisigOpsAccount",
+          "name": "opsAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -329,57 +339,49 @@ const idl: Idl = {
           "isSigner": false
         }
       ],
+      "args": []
+    },
+    {
+      "name": "updateSettings",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "settings",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programData",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
       "args": [
         {
-          "name": "pdaTimestamp",
+          "name": "opsAccount",
+          "type": "publicKey"
+        },
+        {
+          "name": "createMultisigFee",
           "type": "u64"
         },
         {
-          "name": "pdaBump",
-          "type": "u8"
+          "name": "createTransactionFee",
+          "type": "u64"
         }
       ]
     }
   ],
   accounts: [
-    {
-      "name": "Multisig",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owners",
-            "type": {
-              "vec": "publicKey"
-            }
-          },
-          {
-            "name": "threshold",
-            "type": "u64"
-          },
-          {
-            "name": "nonce",
-            "type": "u8"
-          },
-          {
-            "name": "ownerSetSeqno",
-            "type": "u32"
-          },
-          {
-            "name": "label",
-            "type": "string"
-          },
-          {
-            "name": "createdOn",
-            "type": "u64"
-          },
-          {
-            "name": "pendingTxs",
-            "type": "u64"
-          }
-        ]
-      }
-    },
     {
       "name": "MultisigV2",
       "type": {
@@ -534,6 +536,40 @@ const idl: Idl = {
       }
     },
     {
+      "name": "Settings",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "opsAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "createMultisigFee",
+            "type": "u64"
+          },
+          {
+            "name": "createTransactionFee",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ],
+  types: [
+    {
       "name": "Owner",
       "type": {
         "kind": "struct",
@@ -548,9 +584,7 @@ const idl: Idl = {
           }
         ]
       }
-    }
-  ],
-  types: [
+    },
     {
       "name": "OwnerData",
       "type": {
