@@ -1,9 +1,10 @@
 import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider } from "@project-serum/anchor";
 import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
-import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
+import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransactionArchived, MultisigTransactionActivityItem, MultisigTransactionInstruction, NEW_ACCOUNT_REPLACER_ADDRESS } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
-import idl from "./idl";
+import IDLArchived from "./idl";
+import { MeanMultisig as MeanMultisigMultipleInstruction, IDL as IDLMultipleInstructions} from "./idl-multiple-instructions";
 import { utf8 } from '@project-serum/anchor/dist/cjs/utils/bytes'
 
 /**
@@ -16,7 +17,9 @@ export class MeanMultisig implements Multisig {
   /** @private */
   rpcUrl: string;
   /** @private */
-  program: Program<Idl>;
+  programArchived: Program<Idl>;
+  /** @private */
+  program: Program<MeanMultisigMultipleInstruction>;
   /** @private */
   provider: Provider;
   /** @private */
@@ -46,10 +49,11 @@ export class MeanMultisig implements Multisig {
     this.rpcUrl = url;
     this.connection = new Connection(this.rpcUrl, commitment || opts.commitment);
     this.provider = new AnchorProvider(this.connection, anchorWallet, opts);
-    this.program = new Program(idl, MEAN_MULTISIG_PROGRAM, this.provider);
+    this.programArchived = new Program(IDLArchived, MEAN_MULTISIG_PROGRAM, this.provider);
+    this.program = new Program(IDLMultipleInstructions, MEAN_MULTISIG_PROGRAM, this.provider);
     PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId)
             .then(([address]) => { this.settings = address; })
-            .catch((err) => console.error(err));
+      .catch((err) => console.error(err));
   }
 
   /**
@@ -57,7 +61,7 @@ export class MeanMultisig implements Multisig {
    * 
    * @returns The multisig program object.
    */
-  getProgram = (): Program<Idl> => {
+  getProgram = (): Program<MeanMultisigMultipleInstruction> => {
     return this.program;
   }
 
@@ -75,7 +79,7 @@ export class MeanMultisig implements Multisig {
       let multisigAcc = await this.program.account.multisigV2.fetchNullable(address);
 
       if (!multisigAcc) {
-        multisigAcc = await this.program.account.multisig.fetchNullable(address);
+        multisigAcc = await this.programArchived.account.multisig.fetchNullable(address);
 
         if (!multisigAcc) { return null; }
       }
@@ -158,9 +162,9 @@ export class MeanMultisig implements Multisig {
    * @param {PublicKey} multisig - The multisig account where the transaction belongs.
    * @param {PublicKey} transaction - The transaction account.
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
-   * @returns {Promise<MultisigTransaction>} Returns a parsed multisig transactions.
+   * @returns {Promise<MultisigTransactionArchived>} Returns a parsed multisig transactions.
    */
-  getMultisigTransaction = async (multisig: PublicKey, transaction: PublicKey, owner: PublicKey): Promise<MultisigTransaction | null> => {
+  getMultisigTransaction = async (multisig: PublicKey, transaction: PublicKey, owner: PublicKey): Promise<MultisigTransactionArchived | null> => {
 
     try {
 
@@ -200,9 +204,9 @@ export class MeanMultisig implements Multisig {
    * @public
    * @param {PublicKey} multisig - The multisig account where the transaction belongs.
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
-   * @returns {Promise<MultisigTransaction[]>} Returns a list of parsed multisig transactions.
+   * @returns {Promise<MultisigTransactionArchived[]>} Returns a list of parsed multisig transactions.
    */
-  getMultisigTransactions = async (multisig: PublicKey, owner: PublicKey): Promise<MultisigTransaction[]> => {
+  getMultisigTransactions = async (multisig: PublicKey, owner: PublicKey): Promise<MultisigTransactionArchived[]> => {
 
     try {
 
@@ -220,7 +224,7 @@ export class MeanMultisig implements Multisig {
       ];
 
       const [txs, details] = await Promise.all(promises);
-      let transactions: MultisigTransaction[] = [];
+      let transactions: MultisigTransactionArchived[] = [];
 
       for (let tx of txs) {
 
@@ -335,7 +339,7 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and the multisig address.
    */
   createMultisig = async (
     payer: PublicKey,
@@ -344,7 +348,7 @@ export class MeanMultisig implements Multisig {
     threshold: number,
     participants: MultisigParticipant[]
 
-  ): Promise<Transaction | null> => {
+  ): Promise<[Transaction | null, PublicKey | null]> => {
 
     try {
 
@@ -380,11 +384,11 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[multisig]);
 
-      return tx;
+      return [tx, multisig.publicKey];
 
     } catch (err: any) {
       console.error(`Create Multisig: ${err}`);
-      return null;
+      return [null, null];
     }
   };
 
@@ -397,7 +401,7 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and multisig address.
    */
   createFundedMultisig = async (
     payer: PublicKey,
@@ -406,7 +410,7 @@ export class MeanMultisig implements Multisig {
     threshold: number,
     participants: MultisigParticipant[]
 
-  ): Promise<Transaction | null> => {
+  ): Promise<[Transaction | null, PublicKey | null]> => {
 
     try {
 
@@ -449,11 +453,11 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[multisig]);
 
-      return tx;
+      return [tx, multisig.publicKey];
 
     } catch (err: any) {
       console.error(`Create Multisig: ${err}`);
-      return null;
+      return [null, null];
     }
   };
 
@@ -465,12 +469,11 @@ export class MeanMultisig implements Multisig {
    * @param {string} title - The title of the transaction proposal.
    * @param {string | undefined} description - An optional description for the transaction proposal.
    * @param {Date | undefined} expirationDate - Optional transaction expiration date.
-   * @param {number} operation - The itransaction nstruction identifier of the transaction proposal. 
-   * @param {PublicKey} program - The id of the program where the transaction instruction belongs to.
-   * @param {AccountMeta[]} accounts - The accounts required by the transaction instruction to be executed.
-   * @param {Buffer} data - The data required by the transaction instruction to be executed.
+   * @param {number} operation - The itransaction nstruction identifier of the transaction proposal.
+   * @param {PublicKey} multisig - The address of the multisig. 
+   * @param  {TransactionInstruction[]} instructions - The transaction instructions to be executed.
    * @param {TransactionInstruction[]} [preInstructions=[]] - Any required instruction that needs to be executed before creating the transaction proposal.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new transaction proposal.
+   * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new transaction proposal.
    */
   createTransaction = async (
     proposer: PublicKey,
@@ -479,12 +482,10 @@ export class MeanMultisig implements Multisig {
     expirationDate: Date | undefined,
     operation: number,
     multisig: PublicKey,
-    program: PublicKey,
-    accounts: AccountMeta[],
-    data: Buffer | undefined,
+    instructions: TransactionInstruction[] = [],
     preInstructions: TransactionInstruction[] = []
 
-  ): Promise<Transaction | null> => {
+  ): Promise<[Transaction | null, PublicKey | null]> => {
 
     try {
       if (!this.settings) {
@@ -505,18 +506,18 @@ export class MeanMultisig implements Multisig {
       const expirationTime = parseInt(
         (expirationDate ? expirationDate.getTime() / 1_000 : 0).toString()
       );
-
       let tx = await this.program.methods
         .createTransaction(
-          program,
-          accounts,
-          data,
+         instructions.map(i => ({
+          programId: i.programId,
+          accounts: i.keys,
+          data: i.data,
+          keys: i.keys,
+         })),
           operation,
           title,
-          description,
+          description || '',
           new BN(expirationTime),
-          new BN(0),
-          new BN(0)
         )
         .accounts({
           multisig: multisig,
@@ -536,100 +537,11 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[transaction]);
 
-      return tx;
+      return [tx, transaction.publicKey];
 
     } catch (err: any) {
       console.error(`Create Transaction: ${err}`);
-      return null;
-    }
-  };
-
-  /**
-   * Creates a multisig transaction proposal
-   *
-   * @public
-   * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
-   * @param {string} title - The title of the transaction proposal.
-   * @param {string | undefined} description - An optional description for the transaction proposal.
-   * @param {Date | undefined} expirationDate - Optional transaction expiration date.
-   * @param {number} operation - The itransaction nstruction identifier of the transaction proposal. 
-   * @param {PublicKey} program - The id of the program where the transaction instruction belongs to.
-   * @param {AccountMeta[]} accounts - The accounts required by the transaction instruction to be executed.
-   * @param {Buffer} data - The data required by the transaction instruction to be executed.
-   * @param {TransactionInstruction[]} [preInstructions=[]] - Any required instruction that needs to be executed before creating the transaction proposal.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new transaction proposal.
-   */
-  createMoneyStreamTransaction = async (
-    proposer: PublicKey,
-    title: string,
-    description: string | undefined,
-    expirationDate: Date | undefined,
-    pdaTimestamp: number,
-    pdaBump: number,
-    operation: number,
-    multisig: PublicKey,
-    program: PublicKey,
-    accounts: AccountMeta[],
-    data: Buffer | undefined,
-    preInstructions: TransactionInstruction[] = []
-
-  ): Promise<Transaction | null> => {
-
-    try {
-      if (!this.settings) {
-        this.settings = (await PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId))[0];
-      }
-      const transaction = Keypair.generate();
-      const txSize = 1200;
-      const createIx = await this.program.account.transaction.createInstruction(
-        transaction,
-        txSize
-      );
-
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
-        [multisig.toBuffer(), transaction.publicKey.toBuffer()],
-        this.program.programId
-      );
-
-      const expirationTime = parseInt(
-        (expirationDate ? expirationDate.getTime() / 1_000 : 0).toString()
-      );
-
-      let tx = await this.program.methods
-        .createTransaction(
-          program,
-          accounts,
-          data,
-          operation,
-          title,
-          description,
-          new BN(expirationTime),
-          new BN(pdaTimestamp),
-          new BN(pdaBump)
-        )
-        .accounts({
-          multisig: multisig,
-          transaction: transaction.publicKey,
-          transactionDetail: txDetailAddress,
-          proposer: proposer,
-          opsAccount: MEAN_MULTISIG_OPS,
-          settings: this.settings,
-          systemProgram: SystemProgram.programId,
-        })
-        .preInstructions([...preInstructions, createIx])
-        .signers([transaction])
-        .transaction();
-
-      tx.feePayer = proposer;
-      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
-      tx.recentBlockhash = blockhash;
-      tx.partialSign(...[transaction]);
-
-      return tx;
-
-    } catch (err: any) {
-      console.error(`Create Money Stream Transaction: ${err}`);
-      return null;
+      return [null, null];
     }
   };
 
@@ -806,12 +718,11 @@ export class MeanMultisig implements Multisig {
   executeTransaction = async (
     owner: PublicKey,
     transaction: PublicKey
-
   ): Promise<Transaction | null> => {
 
     try {
 
-      const txAccount: any = await this.program.account.transaction.fetchNullable(
+      const txAccount = await this.program.account.transaction.fetchNullable(
         transaction,
         this.connection.commitment
       );
@@ -831,21 +742,39 @@ export class MeanMultisig implements Multisig {
         this.program.programId
       );
 
-      let remainingAccounts = txAccount.accounts
-        // Change the signer status on the vendor signer since it's signed by the program, not the client.
-        .map((meta: any) =>
-          meta.pubkey.equals(multisigSigner)
-            ? { ...meta, isSigner: false }
-            : meta
-        )
-        .concat({
-          pubkey: txAccount.programId,
+      let instructions = txAccount.instructions as MultisigTransactionInstruction[];
+      
+      let remainingAccounts: AccountMeta[] = []
+      let newAccountSigners: Keypair[] = []
+      instructions.forEach((instruction) => {
+        instruction.accounts.forEach((account) => {
+          if (account.pubkey.equals(multisigSigner)) {
+            account.isSigner = false
+          } else if (account.pubkey.equals(NEW_ACCOUNT_REPLACER_ADDRESS)) {
+            let newAccount = Keypair.generate()
+            newAccountSigners.push(newAccount)
+            account.pubkey = newAccount.publicKey
+            account.isSigner = true
+          }
+          remainingAccounts.push(account)
+        })
+        remainingAccounts.push({
+          pubkey: instruction.programId,
           isWritable: false,
           isSigner: false,
-        });
-
+        })
+      })
+        
       let tx = await this.program.methods
-        .executeTransaction()
+        .executeTransaction(
+          newAccountSigners.map((keypair) => {
+            return {
+              pubkey: keypair.publicKey,
+              isSigner: true,
+              isWritable: true,
+            }
+          }),
+        )
         .accounts({
           multisig: multisig,
           multisigSigner: multisigSigner,
@@ -860,87 +789,15 @@ export class MeanMultisig implements Multisig {
       tx.feePayer = owner;
       const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
+      
+      newAccountSigners.forEach(keyPair => {
+        tx.partialSign(keyPair);
+      });
 
       return tx;
 
     } catch (err: any) {
       console.error(`Execute Transaction: ${err}`);
-      return null;
-    }
-  };
-
-  /**
-   * Executes a multisig transaction proposal (Special case for Money Stream creation)
-   *
-   * @public
-   * @param {PublicKey} owner - One of the owners of the `Create Money Stream` transaction proposal.
-   * @param {PublicKey} transaction - The `Create Money Stream` transaction proposal to be executed.
-   * @returns {Promise<Transaction | null>} Returns a transaction for executing a `Create Money Stream` transaction proposal.
-   */
-  executeCreateMoneyStreamTransaction = async (
-    owner: PublicKey,
-    transaction: PublicKey,
-
-  ): Promise<Transaction | null> => {
-
-    try {
-
-      const txAccount: any = await this.program.account.transaction.fetchNullable(
-        transaction,
-        this.connection.commitment
-      );
-
-      if (!txAccount) {
-        throw Error("Transaction proposal not found");
-      }
-
-      const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
-      const [multisigSigner] = await PublicKey.findProgramAddress(
-        [multisig.toBuffer()],
-        this.program.programId
-      );
-
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
-        [multisig.toBuffer(), transaction.toBuffer()],
-        this.program.programId
-      );
-
-      let remainingAccounts = txAccount.accounts
-        // Change the signer status on the vendor signer since it's signed by the program, not the client.
-        .map((meta: any) =>
-          !meta.pubkey.equals(owner) ? { ...meta, isSigner: false } : meta
-        )
-        .concat({
-          pubkey: txAccount.programId,
-          isWritable: false,
-          isSigner: false,
-        });
-
-      const mspIxstreamAccountIndex = remainingAccounts.length === 15 ? 7 : 6;
-      const streamPda = remainingAccounts[mspIxstreamAccountIndex].pubkey;
-
-      let tx = await this.program.methods
-        .executeTransactionPda()
-        .accounts({
-          multisig: multisig,
-          multisigSigner: multisigSigner,
-          pdaAccount: streamPda,
-          transaction: transaction,
-          transactionDetail: txDetailAddress,
-          payer: owner,
-          systemProgram: SystemProgram.programId,
-        })
-        .remainingAccounts(remainingAccounts)
-        .transaction();
-
-      tx.feePayer = owner;
-      const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
-      tx.recentBlockhash = blockhash;
-
-      return tx;
-
-    } catch (err: any) {
-      console.error(`Execute Create Money Stream Transaction: ${err}`);
       return null;
     }
   };

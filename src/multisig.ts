@@ -16,7 +16,7 @@ export interface Multisig {
      * @param {string} label - The label of the multisig account.
      * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
      * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-     * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+     * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and the multisig address.
      */
     createMultisig: (
         payer: PublicKey,
@@ -24,8 +24,7 @@ export interface Multisig {
         // description: string | undefined,
         threshold: number,
         participants: MultisigParticipant[],
-
-    ) => Promise<Transaction | null>,
+    ) => Promise<[Transaction | null, PublicKey | null]>,
 
     /**
      * Creates a multisig transaction proposal
@@ -36,11 +35,10 @@ export interface Multisig {
      * @param {string | undefined} description - An optional description for the transaction proposal.
      * @param {Date | undefined} expirationDate - Optional transaction expiration date.
      * @param {number} operation - The itransaction nstruction identifier of the transaction proposal. 
-     * @param {PublicKey} program - The id of the program where the transaction instruction belongs to.
-     * @param {AccountMeta[]} accounts - The accounts required by the transaction instruction to be executed.
-     * @param {Buffer} data - The data required by the transaction instruction to be executed.
+     * @param {PublicKey} multisig - The address of the multisig. 
+     * @param  {TransactionInstruction[]} instructions - The transaction instructions to be executed.
      * @param {TransactionInstruction[]} [preInstructions=[]] - Any required instruction that needs to be executed before creating the transaction proposal.
-     * @returns {Promise<Transaction | null>} Returns a transaction for creating a new transaction proposal.
+     * @returns {Promise<[Transaction | null, PublicKey | null]>>} Returns a transaction for creating a new transaction proposal.
      */
     createTransaction: (
         proposer: PublicKey,
@@ -49,12 +47,10 @@ export interface Multisig {
         expirationDate: Date | undefined,
         operation: number,
         multisig: PublicKey,
-        program: PublicKey,
-        accounts: AccountMeta[],
-        data: Buffer | undefined,
+        instructions: TransactionInstruction[],
         preInstructions?: TransactionInstruction[]
 
-    ) => Promise<Transaction | null>,
+    ) => Promise<[Transaction | null, PublicKey | null]>,
 
     /**
      * Cancels a multisig transaction proposal

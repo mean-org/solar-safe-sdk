@@ -1,6 +1,6 @@
 import { LAMPORTS_PER_SOL, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from "@solana/web3.js";
 import { Idl, Instruction, Program } from "@project-serum/anchor";
-import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruction, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummary, MULTISIG_ACTIONS } from "./types";
+import { InstructionAccountArchived, InstructionParameterArchived, MultisigInfo, MultisigInstructionArchived, MultisigParticipant, MultisigTransactionArchived, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummaryArchived, MULTISIG_ACTIONS } from "./types";
 import { MultisigTransactionActivityItem } from "./types";
 import { ParsedInstruction } from "@solana/web3.js";
 import { BorshInstructionCoder, InstructionDisplay } from "@project-serum/anchor/dist/cjs/coder/borsh/instruction";
@@ -266,7 +266,7 @@ export const parseMultisigV2Account = async (
  * @param {PublicKey} owner - The owner of the multisig account where the transaction belongs.
  * @param {any} txInfo - Transaction account to parse.
  * @param {any} txDetailInfo - Transaction detail account to parse.
- * @returns {MultisigTransaction} Returns the parsed multisig transaction account.
+ * @returns {MultisigTransactionArchived} Returns the parsed multisig transaction account.
  */
 export const parseMultisigTransaction = (
   multisig: any,
@@ -274,7 +274,7 @@ export const parseMultisigTransaction = (
   txInfo: any,
   txDetailInfo: any
 
-): MultisigTransaction => {
+): MultisigTransactionArchived => {
 
   try {
 
@@ -313,7 +313,7 @@ export const parseMultisigTransaction = (
       data: txInfo.account.data,
       details: parseMultisigTransactionDetail(txDetailInfo),
 
-    } as MultisigTransaction);
+    } as MultisigTransactionArchived);
 
   } catch (err) {
     throw Error(`Multisig Transaction Error: ${err}`);
@@ -436,13 +436,13 @@ export const parseMultisigTransactionDetail = (txDetailInfo: any): MultisigTrans
 /**
  * Gets the multisig transaction account summary
  * 
- * @param {MultisigTransaction} transaction - The multisig transaction to get the summary.
- * @returns {MultisigTransactionSummary | undefined} Returns the multisig transaction summary.
+ * @param {MultisigTransactionArchived} transaction - The multisig transaction to get the summary.
+ * @returns {MultisigTransactionSummaryArchived | undefined} Returns the multisig transaction summary.
  */
 export const getMultisigTransactionSummary = (
-  transaction: MultisigTransaction
+  transaction: MultisigTransactionArchived
 
-): MultisigTransactionSummary | undefined => {
+): MultisigTransactionSummaryArchived | undefined => {
 
   try {
     let expDate =
@@ -475,7 +475,7 @@ export const getMultisigTransactionSummary = (
       didSigned: transaction.didSigned,
       instruction: parseMultisigTransactionInstruction(transaction),
 
-    } as MultisigTransactionSummary;
+    } as MultisigTransactionSummaryArchived;
 
     return txSummary;
     
@@ -486,13 +486,13 @@ export const getMultisigTransactionSummary = (
 };
 
 const parseMultisigTransactionInstruction = (
-  transaction: MultisigTransaction
+  transaction: MultisigTransactionArchived
 
-): MultisigInstruction | null => {
+): MultisigInstructionArchived | null => {
 
   try {
 
-    let ixAccInfos: InstructionAccount[] = [];
+    let ixAccInfos: InstructionAccountArchived[] = [];
     let accIndex = 0;
 
     for (let acc of transaction.accounts) {
@@ -500,7 +500,7 @@ const parseMultisigTransactionInstruction = (
         index: accIndex,
         label: "",
         address: acc.pubkey.toBase58(),
-      } as InstructionAccount);
+      } as InstructionAccountArchived);
 
       accIndex++;
     }
@@ -521,9 +521,9 @@ const parseMultisigTransactionInstruction = (
           index: 0,
           name: "",
           value: bufferStrArray.join(" "),
-        } as InstructionParameter,
+        } as InstructionParameterArchived,
       ],
-    } as MultisigInstruction;
+    } as MultisigInstructionArchived;
 
     return ixInfo;
 

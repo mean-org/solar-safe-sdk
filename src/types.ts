@@ -1,9 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
-
 export const MEAN_MULTISIG_PROGRAM = new PublicKey("FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j");
 export const MEAN_MULTISIG_OPS = new PublicKey("3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw");
 export const LAMPORTS_PER_SIG = 5000;
 export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
+export const NEW_ACCOUNT_REPLACER_ADDRESS = new PublicKey("NEWxKrWoVvDg92eEGEoYvZSLdhgvGY6w2okie1nMzKp");
 
 /**
  * `MultisigTransactionStatus`
@@ -73,11 +73,11 @@ export type MultisigInfo = {
 };
 
 /**
- * `MultisigTransaction` type definition
+ * `MultisigTransactionArchived` type definition
  * 
- * @type {MultisigTransaction}
+ * @type {MultisigTransactionArchived}
  */
-export type MultisigTransaction = {
+export type MultisigTransactionArchived = {
   id: PublicKey;
   operation: number;
   multisig: PublicKey;
@@ -95,6 +95,36 @@ export type MultisigTransaction = {
   details: MultisigTransactionDetail;
   didSigned: boolean | null;
 };
+
+/**
+ * `MultisigTransaction` type definition
+ * 
+ * @type {MultisigTransaction}
+ */
+export type MultisigTransaction = {
+  id: PublicKey;
+  operation: number;
+  multisig: PublicKey;
+  instructions: MultisigTransactionInstruction[];
+  signers: (boolean | null)[];
+  createdOn: Date;
+  executedOn: Date | undefined;
+  ownerSetSeqno: number;
+  status: MultisigTransactionStatus;
+  proposer: PublicKey | undefined;
+  details: MultisigTransactionDetail;
+  didSigned: boolean | null;
+};
+
+export type MultisigTransactionInstruction = {
+  programId: PublicKey,
+  accounts: {
+    pubkey: PublicKey,
+    isSigner: boolean,
+    isWritable: boolean,
+    }[],
+  data: Buffer | undefined,
+}
 
 /**
  * `MultisigTransactionActivity` type definition
@@ -133,9 +163,9 @@ export type MultisigTransactionDetail = {
 /**
  * `MultisigTransactionSummary` type definition
  * 
- * @type {MultisigTransactionSummary}
+ * @type {MultisigTransactionSummaryArchived}
  */
-export type MultisigTransactionSummary = {
+export type MultisigTransactionSummaryArchived = {
   address: string;
   operation: string;
   multisig: string;
@@ -148,21 +178,21 @@ export type MultisigTransactionSummary = {
   description: string;
   expirationDate: string;
   didSigned: boolean;
-  instruction: MultisigInstruction;
+  instruction: MultisigInstructionArchived;
 };
 
-export type MultisigInstruction = {
+export type MultisigInstructionArchived = {
   programId: string;
-  accounts: InstructionAccount[];
-  data: InstructionParameter[];
+  accounts: InstructionAccountArchived[];
+  data: InstructionParameterArchived[];
 };
 
-export type InstructionAccount = {
+export type InstructionAccountArchived = {
   label: string;
   address: string;
 };
 
-export type InstructionParameter = {
+export type InstructionParameterArchived = {
   name: string;
   value: any;
 };
