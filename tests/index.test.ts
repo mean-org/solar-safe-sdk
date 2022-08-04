@@ -6,14 +6,14 @@ import {
   LAMPORTS_PER_SOL,
   sendAndConfirmRawTransaction,
   sendAndConfirmTransaction,
-  SystemProgram
+  SystemProgram,
 } from '@solana/web3.js';
 
 import {Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { MeanMultisig, NEW_ACCOUNT_REPLACER_ADDRESS } from '../src';
+import { MeanMultisig } from '../src';
 import { MSP, TreasuryType, Constants as MSPConstants, TimeUnit, SubCategory } from '@mean-dao/msp';
 
-import {getDefaultKeyPair} from "./utils";
+import {getDefaultKeyPair, _printSerializedTx} from "./utils";
 
 const endpoint = 'http://localhost:8899';
 // deploy multisig locally
@@ -159,7 +159,7 @@ describe('Tests multisig\n', async () => {
   it('Creates a money streaming transaction, approve, execute \n', async () => {
     // before running this tests, deploy msp locally
 
-    const msp = new MSP(endpoint, user1Wallet.publicKey.toBase58(), 'confirmed', new PublicKey("5sW2fA7vikEFHnaYhJsTSCTG7QG4smgoMkB2wHLU3THy"));
+    const msp: MSP = new MSP(endpoint, user1Wallet.publicKey.toBase58(), 'confirmed', new PublicKey("5sW2fA7vikEFHnaYhJsTSCTG7QG4smgoMkB2wHLU3THy"));
     
     console.log('Creating multisig');
     const label = 'Test2';
@@ -268,6 +268,7 @@ describe('Tests multisig\n', async () => {
         mint.publicKey,
         LAMPORTS_PER_SOL * 100,
     );
+
     const [addFundsTxTx, addFundstxKey] = await meanMultisig.createTransaction(
         user1Wallet.publicKey,
         title,
@@ -316,29 +317,24 @@ describe('Tests multisig\n', async () => {
     expiry = new Date();
     expiry.setHours(expiry.getHours() + 1);
 
-    const [createStreamTx, stream] = await msp.createStreamWithTemplate(
+    const [createPreRequiredStreamAccountTx, streamAccount] = await msp.createPreRequiredStreamAccount(user1Wallet.publicKey) as [Transaction, PublicKey];
+    createPreRequiredStreamAccountTx.partialSign(user1Wallet);
+    const createPreRequiredStreamAccountTxSerialized = createPreRequiredStreamAccountTx.serialize({
+      verifySignatures: true,
+    });
+    await sendAndConfirmRawTransaction(connection, createPreRequiredStreamAccountTxSerialized, { commitment: 'confirmed' });
+
+    const createStreamTx = await msp.createStreamWithTemplateWithPreDefinedAccount(
       user1Wallet.publicKey,
       user1Wallet.publicKey,
       treasury,
       user2Wallet.publicKey,
+      streamAccount,
       10 * LAMPORTS_PER_SOL,
       'test_stream',
-    );
-
-    let createStreamInstructions = [];
-    for (const instruction of createStreamTx.instructions) {
-      let accounts = [];
-      for (const account of instruction.keys) {
-        if (account.pubkey.equals(stream)) {
-          account.pubkey = NEW_ACCOUNT_REPLACER_ADDRESS;
-          account.isSigner = false; // IMPORTANT: this is a hack to make the transaction valid
-          instruction.data
-        }
-        accounts.push(account);
-      }
-      createStreamInstructions.push(instruction);
-    }
-
+    ) as Transaction;
+    
+    // create stream
     const [createStreamTxTx, createStreamMultisigTx] = await meanMultisig.createTransaction(
         user1Wallet.publicKey,
         title,
@@ -346,8 +342,7 @@ describe('Tests multisig\n', async () => {
         expiry,
         operation,
         multisig,
-        createStreamInstructions,
-        []
+        createStreamTx.instructions,
     ) as [Transaction, PublicKey];
     createStreamTxTx.partialSign(user1Wallet);
     const createStreamTxTxSerialized = createStreamTxTx.serialize({

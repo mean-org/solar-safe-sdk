@@ -1,7 +1,7 @@
 import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider } from "@project-serum/anchor";
 import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
-import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransactionArchived, MultisigTransactionActivityItem, MultisigTransactionInstruction, NEW_ACCOUNT_REPLACER_ADDRESS } from "./types";
+import { MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransactionArchived, MultisigTransactionActivityItem, MultisigTransactionInstruction } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
 import IDLArchived from "./idl";
 import { MeanMultisig as MeanMultisigMultipleInstruction, IDL as IDLMultipleInstructions} from "./idl-multiple-instructions";
@@ -743,18 +743,11 @@ export class MeanMultisig implements Multisig {
       );
 
       let instructions = txAccount.instructions as MultisigTransactionInstruction[];
-      
       let remainingAccounts: AccountMeta[] = []
-      let newAccountSigners: Keypair[] = []
       instructions.forEach((instruction) => {
         instruction.accounts.forEach((account) => {
           if (account.pubkey.equals(multisigSigner)) {
             account.isSigner = false
-          } else if (account.pubkey.equals(NEW_ACCOUNT_REPLACER_ADDRESS)) {
-            let newAccount = Keypair.generate()
-            newAccountSigners.push(newAccount)
-            account.pubkey = newAccount.publicKey
-            account.isSigner = true
           }
           remainingAccounts.push(account)
         })
@@ -766,15 +759,7 @@ export class MeanMultisig implements Multisig {
       })
         
       let tx = await this.program.methods
-        .executeTransaction(
-          newAccountSigners.map((keypair) => {
-            return {
-              pubkey: keypair.publicKey,
-              isSigner: true,
-              isWritable: true,
-            }
-          }),
-        )
+        .executeTransaction()
         .accounts({
           multisig: multisig,
           multisigSigner: multisigSigner,
@@ -790,10 +775,6 @@ export class MeanMultisig implements Multisig {
       const { blockhash } = await this.connection.getLatestBlockhash(this.connection.commitment);
       tx.recentBlockhash = blockhash;
       
-      newAccountSigners.forEach(keyPair => {
-        tx.partialSign(keyPair);
-      });
-
       return tx;
 
     } catch (err: any) {

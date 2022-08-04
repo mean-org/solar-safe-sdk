@@ -24,7 +24,7 @@
     "test": "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.test.ts"
   },
   "devDependencies": {
-    "@mean-dao/msp": "^2.8.1",
+    "@mean-dao/msp": "2.8.3-alpha.1",
     "@tsconfig/node14": "^1.0.1",
     "@tsconfig/recommended": "1.0.1",
     "@types/chai": "^4.3.1",

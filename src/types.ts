@@ -3,7 +3,6 @@ export const MEAN_MULTISIG_PROGRAM = new PublicKey("FF7U7Vj1PpBkTPau7frwLLrUHrjk
 export const MEAN_MULTISIG_OPS = new PublicKey("3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw");
 export const LAMPORTS_PER_SIG = 5000;
 export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
-export const NEW_ACCOUNT_REPLACER_ADDRESS = new PublicKey("NEWxKrWoVvDg92eEGEoYvZSLdhgvGY6w2okie1nMzKp");
 
 /**
  * `MultisigTransactionStatus`

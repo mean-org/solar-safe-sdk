@@ -3,42 +3,6 @@ export type MeanMultisig = {
   "name": "mean_multisig",
   "instructions": [
     {
-      "name": "initSettings",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "settings",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "programData",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "createMultisig",
       "docs": [
         "Initializes a new multisig account with a set of owners and a threshold."
@@ -338,16 +302,7 @@ export type MeanMultisig = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "additionalAccounts",
-          "type": {
-            "vec": {
-              "defined": "TransactionAccount"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "updateSettings",
@@ -825,42 +780,6 @@ export const IDL: MeanMultisig = {
   "name": "mean_multisig",
   "instructions": [
     {
-      "name": "initSettings",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "settings",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "programData",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "createMultisig",
       "docs": [
         "Initializes a new multisig account with a set of owners and a threshold."
@@ -1160,16 +1079,7 @@ export const IDL: MeanMultisig = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "additionalAccounts",
-          "type": {
-            "vec": {
-              "defined": "TransactionAccount"
-            }
-          }
-        }
-      ]
+      "args": []
     },
     {
       "name": "updateSettings",
