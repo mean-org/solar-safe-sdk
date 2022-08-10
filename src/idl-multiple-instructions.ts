@@ -54,6 +54,10 @@ export type MeanMultisig = {
         {
           "name": "label",
           "type": "string"
+        },
+        {
+          "name": "coolOffPeriodInSeconds",
+          "type": "u64"
         }
       ]
     },
@@ -90,6 +94,10 @@ export type MeanMultisig = {
         {
           "name": "label",
           "type": "string"
+        },
+        {
+          "name": "coolOffPeriodInSeconds",
+          "type": "u64"
         }
       ]
     },
@@ -190,6 +198,16 @@ export type MeanMultisig = {
           "isSigner": true
         },
         {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -224,6 +242,16 @@ export type MeanMultisig = {
           "isSigner": true
         },
         {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -256,6 +284,16 @@ export type MeanMultisig = {
           "name": "owner",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "systemProgram",
@@ -295,6 +333,16 @@ export type MeanMultisig = {
           "name": "payer",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "systemProgram",
@@ -339,6 +387,22 @@ export type MeanMultisig = {
         },
         {
           "name": "createTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "approveTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "rejectTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "executeTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "cancelTransactionFee",
           "type": "u64"
         }
       ]
@@ -415,6 +479,13 @@ export type MeanMultisig = {
             "name": "createdOn",
             "docs": [
               "created time in seconds"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coolOffPeriodInSeconds",
+            "docs": [
+              "cool off period in seconds"
             ],
             "type": "u64"
           }
@@ -499,6 +570,22 @@ export type MeanMultisig = {
               "The proposer of the transaction"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "lastKnownProposalStatus",
+            "docs": [
+              "Last known proposal status",
+              "The status won't be updated after the cool-off period is meet",
+              "or after the expiration date arrives."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "lastPassedTimestamp",
+            "docs": [
+              "Last passed timestamp is used to check if the cool off period has passed before execution"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -578,14 +665,42 @@ export type MeanMultisig = {
           {
             "name": "createMultisigFee",
             "docs": [
-              "Fee amount in lamports"
+              "Fee amount in lamports for creating multisig"
             ],
             "type": "u64"
           },
           {
             "name": "createTransactionFee",
             "docs": [
-              "Fee amount in lamports"
+              "Fee amount in lamports for creating transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "approveTransactionFee",
+            "docs": [
+              "Fee amount in lamports for approving a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rejectTransactionFee",
+            "docs": [
+              "Fee amount in lamports for rejecting a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "executeTransactionFee",
+            "docs": [
+              "Fee amount in lamports for executing a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cancelTransactionFee",
+            "docs": [
+              "Fee amount in lamports for cancelling a transaction"
             ],
             "type": "u64"
           }
@@ -689,6 +804,29 @@ export type MeanMultisig = {
           }
         ]
       }
+    },
+    {
+      "name": "ProposalStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NotDefined"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Passed"
+          },
+          {
+            "name": "Executed"
+          },
+          {
+            "name": "Failed"
+          }
+        ]
+      }
     }
   ],
   "errors": [
@@ -771,6 +909,16 @@ export type MeanMultisig = {
       "code": 6015,
       "name": "RequiredAdditionalAccountsNotSent",
       "msg": "Number of additonal accounts passed is less than required."
+    },
+    {
+      "code": 6016,
+      "name": "CoolOffPeriodNotReached",
+      "msg": "Cool off period has not reached yet."
+    },
+    {
+      "code": 6017,
+      "name": "ExpirationDateTooShort",
+      "msg": "Expiry date comes before cool off period."
     }
   ]
 };
@@ -831,6 +979,10 @@ export const IDL: MeanMultisig = {
         {
           "name": "label",
           "type": "string"
+        },
+        {
+          "name": "coolOffPeriodInSeconds",
+          "type": "u64"
         }
       ]
     },
@@ -867,6 +1019,10 @@ export const IDL: MeanMultisig = {
         {
           "name": "label",
           "type": "string"
+        },
+        {
+          "name": "coolOffPeriodInSeconds",
+          "type": "u64"
         }
       ]
     },
@@ -967,6 +1123,16 @@ export const IDL: MeanMultisig = {
           "isSigner": true
         },
         {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1001,6 +1167,16 @@ export const IDL: MeanMultisig = {
           "isSigner": true
         },
         {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1033,6 +1209,16 @@ export const IDL: MeanMultisig = {
           "name": "owner",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "systemProgram",
@@ -1072,6 +1258,16 @@ export const IDL: MeanMultisig = {
           "name": "payer",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "opsAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "settings",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "systemProgram",
@@ -1116,6 +1312,22 @@ export const IDL: MeanMultisig = {
         },
         {
           "name": "createTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "approveTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "rejectTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "executeTransactionFee",
+          "type": "u64"
+        },
+        {
+          "name": "cancelTransactionFee",
           "type": "u64"
         }
       ]
@@ -1192,6 +1404,13 @@ export const IDL: MeanMultisig = {
             "name": "createdOn",
             "docs": [
               "created time in seconds"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coolOffPeriodInSeconds",
+            "docs": [
+              "cool off period in seconds"
             ],
             "type": "u64"
           }
@@ -1276,6 +1495,22 @@ export const IDL: MeanMultisig = {
               "The proposer of the transaction"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "lastKnownProposalStatus",
+            "docs": [
+              "Last known proposal status",
+              "The status won't be updated after the cool-off period is meet",
+              "or after the expiration date arrives."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "lastPassedTimestamp",
+            "docs": [
+              "Last passed timestamp is used to check if the cool off period has passed before execution"
+            ],
+            "type": "u64"
           }
         ]
       }
@@ -1355,14 +1590,42 @@ export const IDL: MeanMultisig = {
           {
             "name": "createMultisigFee",
             "docs": [
-              "Fee amount in lamports"
+              "Fee amount in lamports for creating multisig"
             ],
             "type": "u64"
           },
           {
             "name": "createTransactionFee",
             "docs": [
-              "Fee amount in lamports"
+              "Fee amount in lamports for creating transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "approveTransactionFee",
+            "docs": [
+              "Fee amount in lamports for approving a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "rejectTransactionFee",
+            "docs": [
+              "Fee amount in lamports for rejecting a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "executeTransactionFee",
+            "docs": [
+              "Fee amount in lamports for executing a transaction"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "cancelTransactionFee",
+            "docs": [
+              "Fee amount in lamports for cancelling a transaction"
             ],
             "type": "u64"
           }
@@ -1466,6 +1729,29 @@ export const IDL: MeanMultisig = {
           }
         ]
       }
+    },
+    {
+      "name": "ProposalStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NotDefined"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Passed"
+          },
+          {
+            "name": "Executed"
+          },
+          {
+            "name": "Failed"
+          }
+        ]
+      }
     }
   ],
   "errors": [
@@ -1548,6 +1834,16 @@ export const IDL: MeanMultisig = {
       "code": 6015,
       "name": "RequiredAdditionalAccountsNotSent",
       "msg": "Number of additonal accounts passed is less than required."
+    },
+    {
+      "code": 6016,
+      "name": "CoolOffPeriodNotReached",
+      "msg": "Cool off period has not reached yet."
+    },
+    {
+      "code": 6017,
+      "name": "ExpirationDateTooShort",
+      "msg": "Expiry date comes before cool off period."
     }
   ]
 };

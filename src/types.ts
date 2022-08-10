@@ -1,34 +1,39 @@
-import { PublicKey } from "@solana/web3.js";
-export const MEAN_MULTISIG_PROGRAM = new PublicKey("FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j");
-export const MEAN_MULTISIG_OPS = new PublicKey("3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw");
+import { PublicKey } from '@solana/web3.js';
+export const MEAN_MULTISIG_PROGRAM = new PublicKey(
+  'FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j',
+);
+export const MEAN_MULTISIG_OPS = new PublicKey(
+  '3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw',
+);
 export const LAMPORTS_PER_SIG = 5000;
 export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
 
 /**
  * `MultisigTransactionStatus`
- * 
+ *
  * @enum {number}
  */
 export enum MultisigTransactionStatus {
+  Unknown = 0,
   /** No enough signatures */
-  Active = 0,
+  Active = 1,
   /** Approved by the required amount of signers */
-  Passed = 1,
+  Passed = 2,
   /** Successfully executed */
-  Executed = 2,
+  Executed = 3,
   /** Rejected by the majority of owners */
-  Failed = 3,
+  Failed = 4,
   /** Invalid owners set seq number */
-  Voided = 4,
+  Voided = 5,
   /** Proposal has expired */
-  Expired = 5,
+  Expired = 6,
   /** Pending for execution */
-  Queued = 6,
+  Queued = 7,
 }
 
 /**
  * `MULTISIG_ACTIONS`
- * 
+ *
  * @enum {number}
  */
 export enum MULTISIG_ACTIONS {
@@ -42,7 +47,7 @@ export enum MULTISIG_ACTIONS {
 
 /**
  * `MultisigTransactionFees` type definition
- * 
+ *
  * @type {MultisigTransactionFees}
  */
 export type MultisigTransactionFees = {
@@ -53,7 +58,7 @@ export type MultisigTransactionFees = {
 
 /**
  * `MultisigInfo` type definition
- * 
+ *
  * @type {MultisigInfo}
  */
 export type MultisigInfo = {
@@ -73,7 +78,7 @@ export type MultisigInfo = {
 
 /**
  * `MultisigTransactionArchived` type definition
- * 
+ *
  * @type {MultisigTransactionArchived}
  */
 export type MultisigTransactionArchived = {
@@ -97,7 +102,7 @@ export type MultisigTransactionArchived = {
 
 /**
  * `MultisigTransaction` type definition
- * 
+ *
  * @type {MultisigTransaction}
  */
 export type MultisigTransaction = {
@@ -116,18 +121,18 @@ export type MultisigTransaction = {
 };
 
 export type MultisigTransactionInstruction = {
-  programId: PublicKey,
+  programId: PublicKey;
   accounts: {
-    pubkey: PublicKey,
-    isSigner: boolean,
-    isWritable: boolean,
-    }[],
-  data: Buffer | undefined,
-}
+    pubkey: PublicKey;
+    isSigner: boolean;
+    isWritable: boolean;
+  }[];
+  data: Buffer | undefined;
+};
 
 /**
  * `MultisigTransactionActivity` type definition
- * 
+ *
  * @type {MultisigTransactionActivityItem}
  */
 export type MultisigTransactionActivityItem = {
@@ -136,11 +141,11 @@ export type MultisigTransactionActivityItem = {
   action: string;
   createdOn: Date;
   owner: any;
-}
+};
 
 /**
  * `MultisigParticipant` type definition
- * 
+ *
  * @type {MultisigParticipant}
  */
 export type MultisigParticipant = {
@@ -150,7 +155,7 @@ export type MultisigParticipant = {
 
 /**
  * `MultisigTransactionDetail` type definition
- * 
+ *
  * @type {MultisigTransactionDetail}
  */
 export type MultisigTransactionDetail = {
@@ -161,7 +166,7 @@ export type MultisigTransactionDetail = {
 
 /**
  * `MultisigTransactionSummary` type definition
- * 
+ *
  * @type {MultisigTransactionSummaryArchived}
  */
 export type MultisigTransactionSummaryArchived = {

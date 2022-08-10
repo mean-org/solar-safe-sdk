@@ -26,12 +26,14 @@ let meanMultisig: MeanMultisig;
 describe('Tests multisig\n', async () => {
   let mint: Token;
   let connection: Connection;
-  let user1Wallet: Keypair, user2Wallet: Keypair, user3Wallet: Keypair;
+  let user1Wallet: Keypair, user2Wallet: Keypair, user3Wallet: Keypair, additionalUser: Keypair;
 
   before(async () => {
     user1Wallet = Keypair.generate();
     user2Wallet = Keypair.generate();
     user3Wallet = Keypair.generate();
+    additionalUser = Keypair.generate();
+
     const root = await getDefaultKeyPair();
     connection = new Connection(endpoint, 'confirmed');
     
@@ -51,20 +53,28 @@ describe('Tests multisig\n', async () => {
       lamports: 1000 * LAMPORTS_PER_SOL,
       toPubkey: user3Wallet.publicKey
     }));
+    tx.add(SystemProgram.transfer({
+      fromPubkey: root.publicKey,
+      lamports: 1000 * LAMPORTS_PER_SOL,
+      toPubkey: additionalUser.publicKey
+    }));
     await sendAndConfirmTransaction(connection, tx, [root], { commitment: 'confirmed' });
     console.log("Balance user1: : ", await connection.getBalance(user1Wallet.publicKey, 'confirmed'));
     console.log("Balance user2: : ", await connection.getBalance(user2Wallet.publicKey, 'confirmed'));
     console.log("Balance user3: : ", await connection.getBalance(user3Wallet.publicKey, 'confirmed'));
+    console.log("Balance additional: ", await connection.getBalance(additionalUser.publicKey, 'confirmed'));
 
     // create a mint
     mint = await Token.createMint(connection, root, root.publicKey, root.publicKey, 9, TOKEN_PROGRAM_ID);
     await mint.mintTo(await mint.createAssociatedTokenAccount(user1Wallet.publicKey), root, [root], 1000 * LAMPORTS_PER_SOL);
     await mint.mintTo(await mint.createAssociatedTokenAccount(user2Wallet.publicKey), root, [root], 1000 * LAMPORTS_PER_SOL);
     await mint.mintTo(await mint.createAssociatedTokenAccount(user3Wallet.publicKey), root, [root], 1000 * LAMPORTS_PER_SOL);
+    await mint.mintTo(await mint.createAssociatedTokenAccount(additionalUser.publicKey), root, [root], 1000 * LAMPORTS_PER_SOL);
     
     meanMultisig = new MeanMultisig(endpoint, user1Wallet.publicKey, 'confirmed');
   });
 
+  
   it('Creates a transaction, approve, execute \n', async () => {
     console.log('Creating multisig');
     const label = 'Test';
@@ -87,7 +97,8 @@ describe('Tests multisig\n', async () => {
         user1Wallet.publicKey,
         label,
         threshold,
-        owners
+        owners,
+        0
     ) as [Transaction, PublicKey];
     createMultisigTx.partialSign(user1Wallet);
     const createVestingTreasuryTxSerialized = createMultisigTx.serialize({
@@ -154,6 +165,9 @@ describe('Tests multisig\n', async () => {
     });
     await sendAndConfirmRawTransaction(connection, executeTransactionTxSerialized, { commitment: 'confirmed' });
     console.log(`Transaction executed\n`);
+
+    const transactionsList = await meanMultisig.getMultisigTransactions(multisig, user1Wallet.publicKey);
+    console.log(JSON.stringify(transactionsList, null, 2));
   });
 
   it('Creates a money streaming transaction, approve, execute \n', async () => {
@@ -182,7 +196,8 @@ describe('Tests multisig\n', async () => {
         user1Wallet.publicKey,
         label,
         threshold,
-        owners
+        owners,
+        0,
     ) as [Transaction, PublicKey];
     createMultisigTx.partialSign(user1Wallet);
     const createVestingTreasuryTxSerialized = createMultisigTx.serialize({
@@ -317,22 +332,14 @@ describe('Tests multisig\n', async () => {
     expiry = new Date();
     expiry.setHours(expiry.getHours() + 1);
 
-    const [createPreRequiredStreamAccountTx, streamAccount] = await msp.createPreRequiredStreamAccount(user1Wallet.publicKey) as [Transaction, PublicKey];
-    createPreRequiredStreamAccountTx.partialSign(user1Wallet);
-    const createPreRequiredStreamAccountTxSerialized = createPreRequiredStreamAccountTx.serialize({
-      verifySignatures: true,
-    });
-    await sendAndConfirmRawTransaction(connection, createPreRequiredStreamAccountTxSerialized, { commitment: 'confirmed' });
-
-    const createStreamTx = await msp.createStreamWithTemplateWithPreDefinedAccount(
+    const [createStreamTx,] = await msp.createStreamWithTemplate(
       user1Wallet.publicKey,
       user1Wallet.publicKey,
       treasury,
       user2Wallet.publicKey,
-      streamAccount,
       10 * LAMPORTS_PER_SOL,
       'test_stream',
-    ) as Transaction;
+    ) as [Transaction, PublicKey];
     
     // create stream
     const [createStreamTxTx, createStreamMultisigTx] = await meanMultisig.createTransaction(
@@ -374,5 +381,123 @@ describe('Tests multisig\n', async () => {
     });
     await sendAndConfirmRawTransaction(connection, executeTransactionTxSerialized, { commitment: 'confirmed' });
     console.log(`Create stream transaction executed\n`);
+
+    const transactionsList = await meanMultisig.getMultisigTransactions(multisig, user1Wallet.publicKey);
+    console.log(JSON.stringify(transactionsList, null, 2));
+  });
+
+  it('Edits a multisig \n', async () => {
+    console.log('Editing multisig');
+    let label = 'Test';
+    let threshold = 2;
+    let owners = [
+        {
+            address: user1Wallet.publicKey.toBase58(),
+            name: "u1"
+        },
+        {
+            address: user2Wallet.publicKey.toBase58(),
+            name: "u2"
+        },
+        {
+            address: user3Wallet.publicKey.toBase58(),
+            name: "u3"
+        }
+    ];
+
+    const [createMultisigTx, multisig] = await meanMultisig.createMultisig(
+        user1Wallet.publicKey,
+        label,
+        threshold,
+        owners,
+        0,
+    ) as [Transaction, PublicKey];
+    createMultisigTx.partialSign(user1Wallet);
+    const createMultisigTxSerialized = createMultisigTx.serialize({
+      verifySignatures: true,
+    });
+    await sendAndConfirmRawTransaction(connection, createMultisigTxSerialized, { commitment: 'confirmed' });
+    console.log(`Created multisig: ${multisig.toBase58()}\n`);
+
+
+    // editing multisig
+
+    label = 'Edited'
+    owners = [
+        {
+            address: user1Wallet.publicKey.toBase58(),
+            name: "u1"
+        },
+        {
+            address: user2Wallet.publicKey.toBase58(),
+            name: "u2"
+        },
+        {
+            address: additionalUser.publicKey.toBase58(),
+            name: "au"
+        }
+    ];
+    
+    const editMultisigTx = await meanMultisig.editMultisig(
+        user1Wallet.publicKey,
+        multisig,
+        label,
+        threshold,
+        owners,
+        0
+    );
+    
+    const title = 'Edit Multisig';
+    const description = "Editing multisig";
+    const operation = 1;
+    let expiry = new Date();
+    expiry.setHours(expiry.getHours() + 1)
+    const [editMultisigTxTx, txKey] = await meanMultisig.createTransaction(
+        user1Wallet.publicKey,
+        title,
+        description,
+        expiry,
+        operation,
+        multisig,
+        editMultisigTx.instructions,
+        []
+    ) as [Transaction, PublicKey];
+    editMultisigTxTx.partialSign(user1Wallet);
+    const editMultisigTxSerialized = editMultisigTxTx.serialize({
+      verifySignatures: true,
+    });
+    await sendAndConfirmRawTransaction(connection, editMultisigTxSerialized, { commitment: 'confirmed' });
+    console.log('Edit Transaction created\n');
+
+    console.log('Approving edit transaction');
+    const approveTx = await meanMultisig.approveTransaction(
+      user2Wallet.publicKey,
+      txKey
+    ) as Transaction;
+    approveTx.partialSign(user2Wallet);
+    const approveTxSerialized = approveTx.serialize({
+      verifySignatures: true,
+    });
+    await sendAndConfirmRawTransaction(connection, approveTxSerialized, { commitment: 'confirmed' });
+    console.log('Edit Transaction approved\n');
+
+    console.log('Executing edit transaction');
+    const executeTransactionTx = await meanMultisig.executeTransaction(
+      user1Wallet.publicKey,
+      txKey,
+    ) as Transaction;
+    executeTransactionTx.partialSign(user1Wallet);
+    const executeTransactionTxSerialized = executeTransactionTx.serialize({
+      verifySignatures: true,
+    });
+    await sendAndConfirmRawTransaction(connection, executeTransactionTxSerialized, { commitment: 'confirmed' });
+    console.log(`Edit Transaction executed\n`);
+
+    const mulltisgAccount = await meanMultisig.getMultisig(multisig);
+    const newOwner = mulltisgAccount!.owners.find(a => a.address === additionalUser.publicKey.toBase58());
+
+    if (!newOwner) {
+      throw new Error("New owner not found");
+    }
   });
 });
