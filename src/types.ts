@@ -200,3 +200,13 @@ export type InstructionParameterArchived = {
   name: string;
   value: any;
 };
+
+export enum TimeUnit {
+  Second = 0,
+  Minute = 60,
+  Hour = 3600,
+  Day = 86400,
+  Week = 604800,
+  Month = 2629750,
+  Year = 31557000,
+}

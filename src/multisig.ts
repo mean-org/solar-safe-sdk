@@ -3,7 +3,7 @@ import {
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
-import { MultisigParticipant } from './types';
+import { MultisigParticipant, TimeUnit } from './types';
 
 /**
  * Multisig interface
@@ -19,7 +19,8 @@ export interface Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions.
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @param {number} coolOffPeriodInSeconds - The cool off period before the transaction can be executed.
+   * @param {number} coolOffPeriodValue - The cool off period before the transaction can be executed (ex: 1)
+   * @param {number} coolOffPeriodUnit - The unit of the cool off period (ex: TimeUnit.Hour)
    * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and the multisig address.
    */
   createMultisig: (
@@ -28,7 +29,8 @@ export interface Multisig {
     // description: string | undefined,
     threshold: number,
     participants: MultisigParticipant[],
-    coolOffPeriodInSeconds: number,
+    coolOffPeriodValue: number,
+    coolOffPeriodUnit: TimeUnit
   ) => Promise<[Transaction | null, PublicKey | null]>;
 
   /**

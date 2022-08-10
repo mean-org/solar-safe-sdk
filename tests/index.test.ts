@@ -98,7 +98,8 @@ describe('Tests multisig\n', async () => {
         label,
         threshold,
         owners,
-        0
+        0,
+        TimeUnit.Day
     ) as [Transaction, PublicKey];
     createMultisigTx.partialSign(user1Wallet);
     const createVestingTreasuryTxSerialized = createMultisigTx.serialize({
@@ -198,6 +199,7 @@ describe('Tests multisig\n', async () => {
         threshold,
         owners,
         0,
+        TimeUnit.Day
     ) as [Transaction, PublicKey];
     createMultisigTx.partialSign(user1Wallet);
     const createVestingTreasuryTxSerialized = createMultisigTx.serialize({
@@ -411,6 +413,7 @@ describe('Tests multisig\n', async () => {
         threshold,
         owners,
         0,
+        TimeUnit.Day
     ) as [Transaction, PublicKey];
     createMultisigTx.partialSign(user1Wallet);
     const createMultisigTxSerialized = createMultisigTx.serialize({
@@ -444,7 +447,8 @@ describe('Tests multisig\n', async () => {
         label,
         threshold,
         owners,
-        0
+        0,
+        TimeUnit.Day
     );
     
     const title = 'Edit Multisig';

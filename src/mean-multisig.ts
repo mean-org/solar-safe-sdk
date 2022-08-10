@@ -31,6 +31,7 @@ import {
   MultisigTransactionArchived,
   MultisigTransactionActivityItem,
   MultisigTransactionInstruction,
+  TimeUnit,
 } from './types';
 import {
   parseMultisigTransaction,
@@ -427,7 +428,8 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions.
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @param {number} coolOffPeriodInSeconds - The cool off period before the transaction can be executed.
+   * @param {number} coolOffPeriodValue - The cool off period before the transaction can be executed (ex: 1)
+   * @param {number} coolOffPeriodUnit - The unit of the cool off period (ex: TimeUnit.Hour)
    * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and the multisig address.
    */
   createMultisig = async (
@@ -436,7 +438,8 @@ export class MeanMultisig implements Multisig {
     // description: string | undefined,
     threshold: number,
     participants: MultisigParticipant[],
-    coolOffPeriodInSeconds: number,
+    coolOffPeriodValue: number,
+    coolOffPeriodUnit: TimeUnit,
   ): Promise<[Transaction | null, PublicKey | null]> => {
     try {
       const multisig = Keypair.generate();
@@ -465,7 +468,7 @@ export class MeanMultisig implements Multisig {
           new BN(threshold),
           nonce,
           label,
-          new BN(coolOffPeriodInSeconds),
+          new BN(coolOffPeriodValue * (coolOffPeriodUnit as number)),
         )
         .accounts({
           proposer: payer,
@@ -500,7 +503,8 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions.
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @param {number} coolOffPeriodInSeconds - The cool off period before the transaction can be executed.
+   * @param {number} coolOffPeriodValue - The cool off period before the transaction can be executed (ex: 1)
+   * @param {number} coolOffPeriodUnit - The unit of the cool off period (ex: TimeUnit.Hour)
    * @returns {Promise<Transaction>} Returns a transaction for editing the multisig.
    */
   editMultisig = async (
@@ -509,47 +513,48 @@ export class MeanMultisig implements Multisig {
     label: string,
     threshold: number,
     participants: MultisigParticipant[],
-    coolOffPeriodInSeconds: number,
+    coolOffPeriodValue: number,
+    coolOffPeriodUnit: TimeUnit,
   ): Promise<Transaction> => {
-      const [multisigSigner,] = await PublicKey.findProgramAddress(
-        [multisig.toBuffer()],
-        this.program.programId,
-      );
-      if (!this.settings) {
-        this.settings = (
-          await PublicKey.findProgramAddress(
-            [Buffer.from(utf8.encode('settings'))],
-            this.program.programId,
-          )
-        )[0];
-      }
-      const owners = participants.map((p: MultisigParticipant) => {
-        return {
-          address: new PublicKey(p.address),
-          name: p.name,
-        };
-      });
-
-      let tx = await this.program.methods
-        .editMultisig(
-          owners,
-          new BN(threshold),
-          label,
-          new BN(coolOffPeriodInSeconds),
+    const [multisigSigner] = await PublicKey.findProgramAddress(
+      [multisig.toBuffer()],
+      this.program.programId,
+    );
+    if (!this.settings) {
+      this.settings = (
+        await PublicKey.findProgramAddress(
+          [Buffer.from(utf8.encode('settings'))],
+          this.program.programId,
         )
-        .accounts({
-          multisigSigner,
-          multisig,
-        })
-        .transaction();
+      )[0];
+    }
+    const owners = participants.map((p: MultisigParticipant) => {
+      return {
+        address: new PublicKey(p.address),
+        name: p.name,
+      };
+    });
 
-      tx.feePayer = payer;
-      const { blockhash } = await this.connection.getLatestBlockhash(
-        this.connection.commitment,
-      );
-      tx.recentBlockhash = blockhash;
+    let tx = await this.program.methods
+      .editMultisig(
+        owners,
+        new BN(threshold),
+        label,
+        new BN(coolOffPeriodUnit * (coolOffPeriodValue as number)),
+      )
+      .accounts({
+        multisigSigner,
+        multisig,
+      })
+      .transaction();
 
-      return tx;
+    tx.feePayer = payer;
+    const { blockhash } = await this.connection.getLatestBlockhash(
+      this.connection.commitment,
+    );
+    tx.recentBlockhash = blockhash;
+
+    return tx;
   };
 
   /**
