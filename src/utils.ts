@@ -106,12 +106,12 @@ export const getTransactionStatus = (
       return lastKnownStatus;
     case MultisigTransactionStatus.Active:
     case MultisigTransactionStatus.Failed:
-      if (isTransactionExpired()) return MultisigTransactionStatus.Expired;
       if (isTransactionVoided()) return MultisigTransactionStatus.Voided;
+      if (isTransactionExpired()) return MultisigTransactionStatus.Expired;
       return lastKnownStatus;
     case MultisigTransactionStatus.Passed:
-      if (isTransactionExpired()) return MultisigTransactionStatus.Expired;
       if (isTransactionVoided()) return MultisigTransactionStatus.Voided;
+      if (isTransactionExpired()) return MultisigTransactionStatus.Expired;
       if (multisig.coolOffPeriodInSeconds > 0)
         return MultisigTransactionStatus.Queued;
     case MultisigTransactionStatus.Unknown:
