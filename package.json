@@ -26,7 +26,6 @@
   "devDependencies": {
     "@mean-dao/msp": "2.8.3-alpha.2",
     "@tsconfig/node14": "^1.0.1",
-    "@tsconfig/recommended": "1.0.1",
     "@types/chai": "^4.3.1",
     "@types/expect": "^24.3.0",
     "@types/fs-extra": "^9.0.13",
