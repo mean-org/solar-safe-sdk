@@ -74,6 +74,7 @@ export type MultisigInfo = {
   createdOnUtc: Date;
   pendingTxsAmount: number;
   version: number;
+  coolOffPeriodInSeconds: number;
 };
 
 /**

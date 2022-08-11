@@ -268,6 +268,7 @@ export const parseMultisigV2Account = async (
       createdOnUtc: new Date(info.account.createdOn.toNumber() * 1000),
       owners: owners,
       balance: 0,
+      coolOffPeriodInSeconds: info.account.coolOffPeriodInSeconds.toNumber(),
     } as MultisigInfo;
 
     return multisig;
