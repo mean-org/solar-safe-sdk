@@ -127,7 +127,7 @@ export const getTransactionStatus = (
         (s: number) => s === 1,
       ).length;
 
-      if (multisig.threshold == approvals) {
+      if (multisig.threshold <= approvals) {
         return MultisigTransactionStatus.Passed;
       }
 
@@ -434,7 +434,7 @@ export const parseMultisigTransactionDetail = (
                 ),
               ),
             )
-          : 'empty',
+          : '',
       description:
         txDetailInfo && txDetailInfo.description
           ? new TextDecoder('utf8').decode(
@@ -444,7 +444,7 @@ export const parseMultisigTransactionDetail = (
                 ),
               ),
             )
-          : 'empty',
+          : '',
       expirationDate:
         txDetailInfo && txDetailInfo.expirationDate > 0
           ? new Date(txDetailInfo.expirationDate.toNumber() * 1_000)

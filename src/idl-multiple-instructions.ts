@@ -1,5 +1,5 @@
 export type MeanMultisig = {
-  "version": "1.14.0",
+  "version": "2.0.0-alpha.1",
   "name": "mean_multisig",
   "instructions": [
     {
@@ -505,15 +505,29 @@ export type MeanMultisig = {
             "type": "publicKey"
           },
           {
-            "name": "instructions",
+            "name": "programId",
             "docs": [
-              "Instructions of the transaction."
+              "Target program to execute against."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "accounts",
+            "docs": [
+              "Accounts requried for the transaction."
             ],
             "type": {
               "vec": {
-                "defined": "TransactionInstruction"
+                "defined": "TransactionAccount"
               }
             }
+          },
+          {
+            "name": "data",
+            "docs": [
+              "Instruction data for the transaction."
+            ],
+            "type": "bytes"
           },
           {
             "name": "signers",
@@ -570,6 +584,31 @@ export type MeanMultisig = {
               "The proposer of the transaction"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "pdaTimestamp",
+            "docs": [
+              "The timestamp used as part of the seed of the PDA account"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pdaBump",
+            "docs": [
+              "The bump used to derive the PDA account"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "instructions",
+            "docs": [
+              "Instructions of the transaction."
+            ],
+            "type": {
+              "vec": {
+                "defined": "TransactionInstruction"
+              }
+            }
           },
           {
             "name": "lastKnownProposalStatus",
@@ -918,13 +957,18 @@ export type MeanMultisig = {
     {
       "code": 6017,
       "name": "ExpirationDateTooShort",
-      "msg": "Expiry date comes before cool off period."
+      "msg": "Expiration date comes before cool off period."
+    },
+    {
+      "code": 6018,
+      "name": "DeptrecatedCreateTransaction",
+      "msg": "Depricated params for creating transaction."
     }
   ]
 };
 
 export const IDL: MeanMultisig = {
-  "version": "1.14.0",
+  "version": "2.0.0-alpha.1",
   "name": "mean_multisig",
   "instructions": [
     {
@@ -1430,15 +1474,29 @@ export const IDL: MeanMultisig = {
             "type": "publicKey"
           },
           {
-            "name": "instructions",
+            "name": "programId",
             "docs": [
-              "Instructions of the transaction."
+              "Target program to execute against."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "accounts",
+            "docs": [
+              "Accounts requried for the transaction."
             ],
             "type": {
               "vec": {
-                "defined": "TransactionInstruction"
+                "defined": "TransactionAccount"
               }
             }
+          },
+          {
+            "name": "data",
+            "docs": [
+              "Instruction data for the transaction."
+            ],
+            "type": "bytes"
           },
           {
             "name": "signers",
@@ -1495,6 +1553,31 @@ export const IDL: MeanMultisig = {
               "The proposer of the transaction"
             ],
             "type": "publicKey"
+          },
+          {
+            "name": "pdaTimestamp",
+            "docs": [
+              "The timestamp used as part of the seed of the PDA account"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pdaBump",
+            "docs": [
+              "The bump used to derive the PDA account"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "instructions",
+            "docs": [
+              "Instructions of the transaction."
+            ],
+            "type": {
+              "vec": {
+                "defined": "TransactionInstruction"
+              }
+            }
           },
           {
             "name": "lastKnownProposalStatus",
@@ -1843,7 +1926,12 @@ export const IDL: MeanMultisig = {
     {
       "code": 6017,
       "name": "ExpirationDateTooShort",
-      "msg": "Expiry date comes before cool off period."
+      "msg": "Expiration date comes before cool off period."
+    },
+    {
+      "code": 6018,
+      "name": "DeptrecatedCreateTransaction",
+      "msg": "Depricated params for creating transaction."
     }
   ]
 };

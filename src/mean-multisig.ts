@@ -4,7 +4,6 @@ import {
   BorshInstructionCoder,
   Idl,
   Program,
-  ProgramAccount,
   Provider,
 } from '@project-serum/anchor';
 import {
@@ -260,7 +259,7 @@ export class MeanMultisig implements Multisig {
       );
 
       const txDetail =
-        await this.program.account.transactionDetail.fetchNullable(
+        await this.programArchived.account.transactionDetail.fetchNullable(
           txDetailAddress,
         );
       const tx = {
@@ -290,9 +289,8 @@ export class MeanMultisig implements Multisig {
     multisig: PublicKey,
     owner: PublicKey,
   ): Promise<MultisigTransactionArchived[]> => {
-    const multisigAcc = await this.program.account.multisigV2.fetchNullable(
-      multisig,
-    );
+    const multisigAcc =
+      await this.program.account.multisigV2.fetchNullable(multisig);
 
     if (!multisigAcc) {
       throw Error(`Multisig account ${multisig.toBase58()} not found`);
@@ -315,9 +313,10 @@ export class MeanMultisig implements Multisig {
       ),
     );
 
-    const details = await this.program.account.transactionDetail.fetchMultiple(
-      txDetailAddresses,
-    );
+    const details =
+      await this.program.account.transactionDetail.fetchMultiple(
+        txDetailAddresses,
+      );
 
     let transactions: MultisigTransactionArchived[] = [];
 
