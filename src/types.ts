@@ -11,8 +11,8 @@ export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
 export const MULTISIG_UPGRADE_BLOCKTIME: {
   [key: string]: number;
 } = {
-  devnet: new Date('2022-08-12T03:24:00').getTime() / 1000, // todo change it once pushed to dev
-  'mainnet-beta': new Date('2022-08-15T03:24:00').getTime() / 1000, // todo change it once pushed to dev
+  devnet: 245687269, // todo change it once pushed to dev
+  'mainnet-beta': 245687269, // todo change it once pushed to dev
 };
 
 /**
