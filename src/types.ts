@@ -1,4 +1,4 @@
-import { clusterApiUrl, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 export const MEAN_MULTISIG_PROGRAM = new PublicKey(
   'FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j',
 );
@@ -11,7 +11,7 @@ export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
 export const MULTISIG_UPGRADE_BLOCKTIME: {
   [key: string]: number;
 } = {
-  'devnet': new Date('2022-08-12T03:24:00').getTime() / 1000, // todo change it once pushed to dev
+  devnet: new Date('2022-08-12T03:24:00').getTime() / 1000, // todo change it once pushed to dev
   'mainnet-beta': new Date('2022-08-15T03:24:00').getTime() / 1000, // todo change it once pushed to dev
 };
 
@@ -175,9 +175,9 @@ export type MultisigTransactionDetail = {
 /**
  * `MultisigTransactionSummary` type definition
  *
- * @type {MultisigTransactionSummaryArchived}
+ * @type {MultisigTransactionSummary}
  */
-export type MultisigTransactionSummaryArchived = {
+export type MultisigTransactionSummary = {
   address: string;
   operation: string;
   multisig: string;
@@ -190,21 +190,21 @@ export type MultisigTransactionSummaryArchived = {
   description: string;
   expirationDate: string;
   didSigned: boolean;
-  instruction: MultisigInstructionArchived;
+  instructions: MultisigInstruction[];
 };
 
-export type MultisigInstructionArchived = {
+export type MultisigInstruction = {
   programId: string;
-  accounts: InstructionAccountArchived[];
-  data: InstructionParameterArchived[];
+  accounts: InstructionAccount[];
+  data: InstructionParameter[];
 };
 
-export type InstructionAccountArchived = {
+export type InstructionAccount = {
   label: string;
   address: string;
 };
 
-export type InstructionParameterArchived = {
+export type InstructionParameter = {
   name: string;
   value: any;
 };

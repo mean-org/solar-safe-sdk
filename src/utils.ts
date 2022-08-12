@@ -6,10 +6,10 @@ import {
 } from '@solana/web3.js';
 import { Program } from '@project-serum/anchor';
 import {
-  InstructionAccountArchived,
-  InstructionParameterArchived,
+  InstructionAccount,
+  InstructionParameter,
   MultisigInfo,
-  MultisigInstructionArchived,
+  MultisigInstruction,
   MultisigParticipant,
   MultisigTransaction,
   MultisigTransactionArchived,
@@ -17,7 +17,7 @@ import {
   MultisigTransactionFees,
   MultisigTransactionInstruction,
   MultisigTransactionStatus,
-  MultisigTransactionSummaryArchived,
+  MultisigTransactionSummary,
   MULTISIG_ACTIONS,
 } from './types';
 import { MeanMultisig as MeanMultisigMultipleInstruction } from './idl-multiple-instructions';
@@ -516,12 +516,12 @@ export const parseMultisigTransactionDetail = (
 /**
  * Gets the multisig transaction account summary
  *
- * @param {MultisigTransactionArchived} transaction - The multisig transaction to get the summary.
- * @returns {MultisigTransactionSummaryArchived | undefined} Returns the multisig transaction summary.
+ * @param {MultisigTransaction| MultisigTransactionArchived} transaction - The multisig transaction to get the summary.
+ * @returns {MultisigTransactionSummary | undefined} Returns the multisig transaction summary.
  */
 export const getMultisigTransactionSummary = (
-  transaction: MultisigTransactionArchived,
-): MultisigTransactionSummaryArchived | undefined => {
+  transaction: MultisigTransaction | MultisigTransactionArchived,
+): MultisigTransactionSummary | undefined => {
   try {
     let expDate =
       transaction.details && transaction.details.expirationDate
@@ -551,8 +551,8 @@ export const getMultisigTransactionSummary = (
       multisig: transaction.multisig.toBase58(),
       status: transaction.status.toString(),
       didSigned: transaction.didSigned,
-      instruction: parseMultisigTransactionInstruction(transaction),
-    } as MultisigTransactionSummaryArchived;
+      instructions: parseMultisigTransactionInstruction(transaction),
+    } as MultisigTransactionSummary;
 
     return txSummary;
   } catch (err: any) {
@@ -562,43 +562,64 @@ export const getMultisigTransactionSummary = (
 };
 
 const parseMultisigTransactionInstruction = (
-  transaction: MultisigTransactionArchived,
-): MultisigInstructionArchived | null => {
+  transaction: MultisigTransactionArchived | MultisigTransaction,
+): MultisigInstruction[] | null => {
   try {
-    let ixAccInfos: InstructionAccountArchived[] = [];
-    let accIndex = 0;
+    let ixInfos: MultisigInstruction[] = [];
+    const isArchived = (transaction as MultisigTransactionArchived).programId
+      ? true
+      : false;
 
-    for (let acc of transaction.accounts) {
-      ixAccInfos.push({
-        index: accIndex,
-        label: '',
-        address: acc.pubkey.toBase58(),
-      } as InstructionAccountArchived);
-
-      accIndex++;
-    }
-
-    // let ixDataInfos: InstructionDataInfo[] = [];
-    let bufferStr = Buffer.from(transaction.data).toString('hex');
-    let bufferStrArray: string[] = [];
-
-    for (let i = 0; i < bufferStr.length; i += 2) {
-      bufferStrArray.push(bufferStr.substring(i, i + 2));
-    }
-
-    let ixInfo = {
-      programId: transaction.programId.toBase58(),
-      accounts: ixAccInfos,
-      data: [
+    let instructions: MultisigTransactionInstruction[];
+    if (!isArchived) {
+      instructions = (transaction as MultisigTransaction).instructions;
+    } else {
+      const tx = transaction as MultisigTransactionArchived;
+      instructions = [
         {
-          index: 0,
-          name: '',
-          value: bufferStrArray.join(' '),
-        } as InstructionParameterArchived,
-      ],
-    } as MultisigInstructionArchived;
+          accounts: tx.accounts,
+          data: tx.data,
+          programId: tx.programId,
+        },
+      ];
+    }
 
-    return ixInfo;
+    instructions.forEach((ix: any, index: number) => {
+      let ixAccInfos: InstructionAccount[] = [];
+      let accIndex = 0;
+
+      for (let acc of ix.accounts) {
+        ixAccInfos.push({
+          index: accIndex,
+          label: '',
+          address: acc.pubkey.toBase58(),
+        } as InstructionAccount);
+
+        accIndex++;
+      }
+
+      // let ixDataInfos: InstructionDataInfo[] = [];
+      let bufferStr = Buffer.from(ix.data).toString('hex');
+      let bufferStrArray: string[] = [];
+
+      for (let i = 0; i < bufferStr.length; i += 2) {
+        bufferStrArray.push(bufferStr.substring(i, i + 2));
+      }
+
+      let ixInfo = {
+        programId: ix.programId.toBase58(),
+        accounts: ixAccInfos,
+        data: [
+          {
+            index: 0,
+            name: '',
+            value: bufferStrArray.join(' '),
+          } as InstructionParameter,
+        ],
+      } as MultisigInstruction;
+      ixInfos.push(ixInfo);
+    });
+    return ixInfos;
   } catch (err: any) {
     console.error(`Parse Multisig Transaction: ${err}`);
     return null;
