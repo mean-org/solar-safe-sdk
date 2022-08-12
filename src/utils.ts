@@ -4,7 +4,7 @@ import {
   PartiallyDecodedInstruction,
   PublicKey,
 } from '@solana/web3.js';
-import { Idl, Program } from '@project-serum/anchor';
+import { Program } from '@project-serum/anchor';
 import {
   InstructionAccountArchived,
   InstructionParameterArchived,
@@ -18,17 +18,20 @@ import {
   MultisigTransactionSummaryArchived,
   MULTISIG_ACTIONS,
 } from './types';
+import {
+  MeanMultisig as MeanMultisigMultipleInstruction,
+} from './idl-multiple-instructions';
 import { MultisigTransactionActivityItem } from './types';
 
 /**
  * Gets the multisig actions fees.
  *
- * @param {Program<Idl>} program - Multisig program instance
+ * @param {Program<MeanMultisigMultipleInstruction>} program - Multisig program instance
  * @param {MULTISIG_ACTIONS} action - Multisig action to get the fees for.
  * @returns {Promise<MultisigTransactionFees>} Returns a MultisigTransactionFees object.
  */
 export const getFees = async (
-  program: Program<Idl>,
+  program: Program<MeanMultisigMultipleInstruction>,
   action: MULTISIG_ACTIONS,
 ): Promise<MultisigTransactionFees> => {
   let txFees: MultisigTransactionFees = {
