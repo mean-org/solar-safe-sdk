@@ -11,16 +11,16 @@ import {
   MultisigInfo,
   MultisigInstructionArchived,
   MultisigParticipant,
+  MultisigTransaction,
   MultisigTransactionArchived,
   MultisigTransactionDetail,
   MultisigTransactionFees,
+  MultisigTransactionInstruction,
   MultisigTransactionStatus,
   MultisigTransactionSummaryArchived,
   MULTISIG_ACTIONS,
 } from './types';
-import {
-  MeanMultisig as MeanMultisigMultipleInstruction,
-} from './idl-multiple-instructions';
+import { MeanMultisig as MeanMultisigMultipleInstruction } from './idl-multiple-instructions';
 import { MultisigTransactionActivityItem } from './types';
 
 /**
@@ -288,9 +288,62 @@ export const parseMultisigV2Account = async (
  * @param {PublicKey} owner - The owner of the multisig account where the transaction belongs.
  * @param {any} txInfo - Transaction account to parse.
  * @param {any} txDetailInfo - Transaction detail account to parse.
- * @returns {MultisigTransactionArchived} Returns the parsed multisig transaction account.
+ * @returns {MultisigTransaction} Returns the parsed multisig transaction account.
  */
 export const parseMultisigTransaction = (
+  multisig: any,
+  owner: PublicKey,
+  txInfo: any,
+  txDetailInfo: any,
+): MultisigTransaction => {
+  try {
+    let ownerIndex = multisig.owners.findIndex(
+      (o: any) => o.address.toBase58() === owner.toBase58(),
+    );
+
+    const signers: (boolean | null)[] = [];
+    const allSigners = txInfo.account.signers.slice(
+      0,
+      multisig.owners.filter((o: any) => !o.address.equals(PublicKey.default))
+        .length,
+    );
+
+    for (const s of allSigners) {
+      signers.push(s === 0 ? null : s === 1 ? true : false);
+    }
+    return {
+      id: txInfo.publicKey,
+      multisig: txInfo.account.multisig,
+      signers: signers,
+      ownerSetSeqno: txInfo.account.ownerSetSeqno,
+      createdOn: new Date(txInfo.account.createdOn.toNumber() * 1000),
+      executedOn:
+        txInfo.account.executedOn && txInfo.account.executedOn.toNumber() > 0
+          ? new Date(txInfo.account.executedOn.toNumber() * 1000)
+          : undefined,
+      status: getTransactionStatus(multisig, txInfo, txDetailInfo) as number,
+      operation: txInfo.account.operation,
+      details: parseMultisigTransactionDetail(txDetailInfo),
+      didSigned: signers[ownerIndex],
+      proposer: txInfo.account.proposer,
+      instructions: txInfo.account
+        .instructions as MultisigTransactionInstruction[],
+    };
+  } catch (err) {
+    throw Error(`Multisig Transaction Error: ${err}`);
+  }
+};
+
+/**
+ * Parses the multisig transaction account.
+ *
+ * @param {any} multisig - Multisig account where the transaction belongs.
+ * @param {PublicKey} owner - The owner of the multisig account where the transaction belongs.
+ * @param {any} txInfo - Transaction account to parse.
+ * @param {any} txDetailInfo - Transaction detail account to parse.
+ * @returns {MultisigTransactionArchived} Returns the parsed multisig transaction account.
+ */
+export const parseMultisigTransactionArchived = (
   multisig: any,
   owner: PublicKey,
   txInfo: any,

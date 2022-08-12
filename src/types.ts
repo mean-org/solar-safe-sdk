@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
+import { clusterApiUrl, PublicKey } from '@solana/web3.js';
 export const MEAN_MULTISIG_PROGRAM = new PublicKey(
   'FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j',
 );
@@ -7,6 +7,13 @@ export const MEAN_MULTISIG_OPS = new PublicKey(
 );
 export const LAMPORTS_PER_SIG = 5000;
 export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
+
+export const MULTISIG_UPGRADE_BLOCKTIME: {
+  [key: string]: number;
+} = {
+  'devnet': new Date('2022-08-12T03:24:00').getTime() / 1000, // todo change it once pushed to dev
+  'mainnet-beta': new Date('2022-08-15T03:24:00').getTime() / 1000, // todo change it once pushed to dev
+};
 
 /**
  * `MultisigTransactionStatus`

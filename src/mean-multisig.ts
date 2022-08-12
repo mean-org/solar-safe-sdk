@@ -8,6 +8,7 @@ import {
 } from '@project-serum/anchor';
 import {
   AccountMeta,
+  Cluster,
   Commitment,
   ConfirmedSignaturesForAddress2Options,
   Connection,
@@ -27,16 +28,19 @@ import {
   MEAN_MULTISIG_PROGRAM,
   MultisigInfo,
   MultisigParticipant,
-  MultisigTransactionArchived,
   MultisigTransactionActivityItem,
   MultisigTransactionInstruction,
   TimeUnit,
+  MultisigTransaction,
+  MultisigTransactionArchived,
+  MULTISIG_UPGRADE_BLOCKTIME
 } from './types';
 import {
-  parseMultisigTransaction,
   parseMultisigTransactionActivity,
   parseMultisigV1Account,
   parseMultisigV2Account,
+  parseMultisigTransaction,
+  parseMultisigTransactionArchived,
 } from './utils';
 import IDLArchived from './idl';
 import {
@@ -236,7 +240,7 @@ export class MeanMultisig implements Multisig {
     multisig: PublicKey,
     transaction: PublicKey,
     owner: PublicKey,
-  ): Promise<MultisigTransactionArchived | null> => {
+  ): Promise<MultisigTransaction | null> => {
     try {
       const multisigAcc = await this.program.account.multisigV2.fetchNullable(
         multisig,
@@ -283,12 +287,14 @@ export class MeanMultisig implements Multisig {
    * @public
    * @param {PublicKey} multisig - The multisig account where the transaction belongs.
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
-   * @returns {Promise<MultisigTransactionArchived[]>} Returns a list of parsed multisig transactions.
+   * @param {Cluster} cluster - The cluster id of the environment.
+   * @returns {Promise<MultisigTransaction | MultisigTransactionArchived[]>} Returns a list of parsed multisig transactions.
    */
   getMultisigTransactions = async (
     multisig: PublicKey,
     owner: PublicKey,
-  ): Promise<MultisigTransactionArchived[]> => {
+    clusterId: Cluster,
+  ): Promise<(MultisigTransaction | MultisigTransactionArchived)[]> => {
     const multisigAcc = await this.program.account.multisigV2.fetchNullable(
       multisig,
     );
@@ -318,14 +324,23 @@ export class MeanMultisig implements Multisig {
       txDetailAddresses,
     );
 
-    let transactions: MultisigTransactionArchived[] = [];
+    let transactions: (MultisigTransaction | MultisigTransactionArchived)[] =
+      [];
 
     for (let i = 0; i < txs.length; i++) {
       const tx = txs[i];
+      const upgradeDate = MULTISIG_UPGRADE_BLOCKTIME[clusterId];
       const detail = details[i];
       if (detail) {
-        let txInfo = parseMultisigTransaction(multisigAcc, owner, tx, detail);
-        transactions.push(txInfo);
+        if (tx.account.createdOn.toNumber() > upgradeDate) {
+          transactions.push(
+            parseMultisigTransaction(multisigAcc, owner, tx, detail),
+          );
+        } else {
+          transactions.push(
+            parseMultisigTransactionArchived(multisigAcc, owner, tx, detail),
+          );
+        }
       }
     }
     const sortedTxs = transactions.sort(
