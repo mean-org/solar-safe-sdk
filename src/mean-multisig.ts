@@ -234,13 +234,15 @@ export class MeanMultisig implements Multisig {
    * @param {PublicKey} multisig - The multisig account where the transaction belongs.
    * @param {PublicKey} transaction - The transaction account.
    * @param {PublicKey} owner - One of the owners of the multisig account where the transaction belongs.
-   * @returns {Promise<MultisigTransactionArchived>} Returns a parsed multisig transactions.
+   * @param {Cluster} cluster - The cluster id of the environment.
+   * @returns {Promise<MultisigTransactionArchived | MultisigTransactionArchived | null>} Returns a parsed multisig transactions.
    */
   getMultisigTransaction = async (
     multisig: PublicKey,
     transaction: PublicKey,
     owner: PublicKey,
-  ): Promise<MultisigTransaction | null> => {
+    clusterId: Cluster,
+  ): Promise<MultisigTransaction | MultisigTransactionArchived | null> => {
     try {
       const multisigAcc = await this.program.account.multisigV2.fetchNullable(
         multisig,
@@ -271,9 +273,17 @@ export class MeanMultisig implements Multisig {
         account: transactionAcc,
       };
 
-      const txInfo = parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
-
-      return txInfo;
+      const upgradeDate = MULTISIG_UPGRADE_BLOCKTIME[clusterId];
+      if (tx.account.createdOn.toNumber() > upgradeDate) {
+        return parseMultisigTransaction(multisigAcc, owner, tx, txDetail);
+      } else {
+        return parseMultisigTransactionArchived(
+          multisigAcc,
+          owner,
+          tx,
+          txDetail,
+        );
+      }
     } catch (err: any) {
       console.error(`Get Multisig Transaction: ${err}`);
       return null;
