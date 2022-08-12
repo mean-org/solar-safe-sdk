@@ -697,7 +697,7 @@ export class MeanMultisig implements Multisig {
         )[0];
       }
       const transaction = Keypair.generate();
-      const txSize = 1200;
+      const txSize = 2400;
       const createIx = await this.program.account.transaction.createInstruction(
         transaction,
         txSize,
