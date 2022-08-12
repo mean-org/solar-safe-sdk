@@ -289,8 +289,9 @@ export class MeanMultisig implements Multisig {
     multisig: PublicKey,
     owner: PublicKey,
   ): Promise<MultisigTransactionArchived[]> => {
-    const multisigAcc =
-      await this.program.account.multisigV2.fetchNullable(multisig);
+    const multisigAcc = await this.program.account.multisigV2.fetchNullable(
+      multisig,
+    );
 
     if (!multisigAcc) {
       throw Error(`Multisig account ${multisig.toBase58()} not found`);
@@ -313,10 +314,9 @@ export class MeanMultisig implements Multisig {
       ),
     );
 
-    const details =
-      await this.program.account.transactionDetail.fetchMultiple(
-        txDetailAddresses,
-      );
+    const details = await this.program.account.transactionDetail.fetchMultiple(
+      txDetailAddresses,
+    );
 
     let transactions: MultisigTransactionArchived[] = [];
 
@@ -565,7 +565,8 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions.
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @param {number} coolOffPeriodInSeconds - The cool off period before the transaction can be executed.
+   * @param {number} coolOffPeriodValue - The cool off period before the transaction can be executed (ex: 1)
+   * @param {number} coolOffPeriodUnit - The unit of the cool off period (ex: TimeUnit.Hour)
    * @returns {Promise<[Transaction | null, PublicKey | null]>} Returns a transaction for creating a new multisig and multisig address.
    */
   createFundedMultisig = async (
@@ -574,7 +575,8 @@ export class MeanMultisig implements Multisig {
     label: string,
     threshold: number,
     participants: MultisigParticipant[],
-    coolOffPeriodInSeconds: number,
+    coolOffPeriodValue: number,
+    coolOffPeriodUnit: TimeUnit,
   ): Promise<[Transaction | null, PublicKey | null]> => {
     try {
       const multisig = Keypair.generate();
@@ -603,7 +605,7 @@ export class MeanMultisig implements Multisig {
           new BN(threshold),
           nonce,
           label,
-          new BN(coolOffPeriodInSeconds),
+          new BN(coolOffPeriodUnit * (coolOffPeriodValue as number)),
         )
         .accounts({
           proposer: payer,
