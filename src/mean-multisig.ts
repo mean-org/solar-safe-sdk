@@ -34,7 +34,8 @@ export class MeanMultisig implements Multisig {
   constructor(
     url: string,
     wallet: PublicKey,
-    commitment: Commitment | ConnectionConfig
+    commitment: Commitment | ConnectionConfig,
+    programId?: PublicKey,
   ) {
     const opts = AnchorProvider.defaultOptions();
     const anchorWallet = {
@@ -46,7 +47,9 @@ export class MeanMultisig implements Multisig {
     this.rpcUrl = url;
     this.connection = new Connection(this.rpcUrl, commitment || opts.commitment);
     this.provider = new AnchorProvider(this.connection, anchorWallet, opts);
-    this.program = new Program(idl, MEAN_MULTISIG_PROGRAM, this.provider);
+    this.program = new Program(idl, programId ?? MEAN_MULTISIG_PROGRAM, this.provider);
+    console.log(`=========> MULTISIG CLIENT CREATED! ProgramID: ${programId}`);
+    
     PublicKey.findProgramAddress([Buffer.from(utf8.encode("settings"))], this.program.programId)
             .then(([address]) => { this.settings = address; })
             .catch((err) => console.error(err));
