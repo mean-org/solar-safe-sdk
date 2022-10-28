@@ -4,7 +4,7 @@ import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruc
 import { MultisigTransactionActivityItem } from "./types";
 import { ParsedInstruction } from "@solana/web3.js";
 import { BorshInstructionCoder, InstructionDisplay } from "@project-serum/anchor/dist/cjs/coder/borsh/instruction";
-
+import { IDL, IdlMultisig } from ".";
 /**
  * Gets the multisig actions fees.
  * 
@@ -13,7 +13,7 @@ import { BorshInstructionCoder, InstructionDisplay } from "@project-serum/anchor
  * @returns {Promise<MultisigTransactionFees>} Returns a MultisigTransactionFees object.
  */
 export const getFees = async (
-  program: Program<Idl>,
+  program: Program<IdlMultisig>,
   action: MULTISIG_ACTIONS
 
 ): Promise<MultisigTransactionFees> => {
