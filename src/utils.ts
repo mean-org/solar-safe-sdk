@@ -361,6 +361,8 @@ export const parseMultisigTransactionActivity = (
     ? "executed"
     : decodedIx.name === "executeTransactionPda"
     ? "executed"
+    : decodedIx.name === "executeTransactionWithReplacements"
+    ? "executed"
     : decodedIx.name === "cancelTransaction"
     ? "deleted"
     : "rejected";

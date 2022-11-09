@@ -321,6 +321,47 @@ export type MeanMultisig = {
       "args": []
     },
     {
+      "name": "executeTransactionPda",
+      "accounts": [
+        {
+          "name": "multisig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "multisigSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pdaAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "transaction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "transactionDetail",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "executeTransactionWithReplacements",
       "docs": [
         "Executes the given transaction if threshold owners have signed it."
@@ -1174,6 +1215,47 @@ export const IDL: MeanMultisig = {
         {
           "name": "multisigSigner",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "transaction",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "transactionDetail",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "executeTransactionPda",
+      "accounts": [
+        {
+          "name": "multisig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "multisigSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pdaAccount",
+          "isMut": true,
           "isSigner": false
         },
         {
