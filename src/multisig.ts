@@ -92,5 +92,5 @@ export interface Multisig {
      * @param {PublicKey} transaction - The transaction proposal to be executed.
      * @returns {Promise<Transaction | null>} Returns a transaction for executing the transaction proposal.
      */
-    executeTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction | null>,
+    executeTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction>,
 }

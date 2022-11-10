@@ -720,9 +720,7 @@ export class MeanMultisig implements Multisig {
     owner: PublicKey,
     transaction: PublicKey
 
-  ): Promise<Transaction | null> => {
-
-    try {
+  ): Promise<Transaction> => {
 
       const txAccount = await this.program.account.transaction.fetchNullable(
         transaction,
@@ -757,9 +755,17 @@ export class MeanMultisig implements Multisig {
           isSigner: false,
         });
 
-      const accountReplacementKeys = remainingAccounts
-        .filter(a => a.pubkey.equals(ACCOUNT_REPLACEMENT_PLACEHOLDER))
-        .map(_ => Keypair.generate());
+    // Replace placeholders with fresh random keypairs in the remaining
+    // accounts list
+    const accountReplacementKeys: Keypair[] = [];
+    for (let i = 0; i < remainingAccounts.length; i++) {
+      if (!remainingAccounts[i].pubkey.equals(ACCOUNT_REPLACEMENT_PLACEHOLDER)) {
+        continue;
+      }
+      const replacementKey = Keypair.generate();
+      remainingAccounts[i].pubkey = replacementKey.publicKey;
+      accountReplacementKeys.push(replacementKey);
+    }
 
       if(accountReplacementKeys.length > 0) {
         let tx = await this.program.methods
@@ -802,10 +808,5 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
 
       return tx;
-
-    } catch (err: any) {
-      console.error(`Execute Transaction: ${err}`);
-      return null;
-    }
   };
 }
