@@ -1,5 +1,5 @@
 export type MeanMultisig = {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "name": "mean_multisig",
   "instructions": [
     {
@@ -914,12 +914,17 @@ export type MeanMultisig = {
       "code": 6016,
       "name": "NotEnoughReplacementAccounts",
       "msg": "Not enough replacement accounts."
+    },
+    {
+      "code": 6017,
+      "name": "FeeExceedsMaximumAllowed",
+      "msg": "Fee amount exceeds the maximum allowed."
     }
   ]
 };
 
 export const IDL: MeanMultisig = {
-  "version": "1.14.0",
+  "version": "1.15.0",
   "name": "mean_multisig",
   "instructions": [
     {
@@ -1834,6 +1839,11 @@ export const IDL: MeanMultisig = {
       "code": 6016,
       "name": "NotEnoughReplacementAccounts",
       "msg": "Not enough replacement accounts."
+    },
+    {
+      "code": 6017,
+      "name": "FeeExceedsMaximumAllowed",
+      "msg": "Fee amount exceeds the maximum allowed."
     }
   ]
 };
