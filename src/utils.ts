@@ -1,9 +1,9 @@
 import { LAMPORTS_PER_SOL, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from "@solana/web3.js";
-import { Idl, Instruction, Program } from "@project-serum/anchor";
+import { Idl, Instruction, Program } from "@coral-xyz/anchor";
 import { InstructionAccount, InstructionParameter, MultisigInfo, MultisigInstruction, MultisigParticipant, MultisigTransaction, MultisigTransactionDetail, MultisigTransactionFees, MultisigTransactionStatus, MultisigTransactionSummary, MULTISIG_ACTIONS } from "./types";
 import { MultisigTransactionActivityItem } from "./types";
 import { ParsedInstruction } from "@solana/web3.js";
-import { BorshInstructionCoder, InstructionDisplay } from "@project-serum/anchor/dist/cjs/coder/borsh/instruction";
+import { BorshInstructionCoder, InstructionDisplay } from "@coral-xyz/anchor/dist/cjs/coder/borsh/instruction";
 import { IDL, IdlMultisig } from ".";
 /**
  * Gets the multisig actions fees.

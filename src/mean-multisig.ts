@@ -1,10 +1,10 @@
-import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider, IdlAccounts, IdlTypes } from "@project-serum/anchor";
+import { AnchorProvider, BN, BorshInstructionCoder, Idl, Program, ProgramAccount, Provider, IdlAccounts, IdlTypes } from "@coral-xyz/anchor";
 import { AccountMeta, Commitment, ConfirmedSignaturesForAddress2Options, Connection, ConnectionConfig, Finality, GetProgramAccountsFilter, Keypair, PublicKey, PublicKeyInitData, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { Multisig } from "./multisig";
 import { ACCOUNT_REPLACEMENT_PLACEHOLDER, MEAN_MULTISIG_OPS, MEAN_MULTISIG_PROGRAM, MultisigInfo, MultisigParticipant, MultisigTransaction, MultisigTransactionActivityItem } from "./types";
 import { parseMultisigTransaction, parseMultisigTransactionActivity, parseMultisigV1Account, parseMultisigV2Account } from "./utils";
 // import { IDL, MeanMultisig as IdlMultisig } from './idl';
-import { utf8 } from '@project-serum/anchor/dist/cjs/utils/bytes'
+import { utf8 } from '@coral-xyz/anchor/dist/cjs/utils/bytes'
 import { IDL, IdlMultisig } from ".";
 
 type IdlTransaction = IdlAccounts<IdlMultisig>["transaction"];
@@ -512,7 +512,7 @@ export class MeanMultisig implements Multisig {
         .createTransaction(
           program,
           accounts,
-          data,
+          data || Buffer.from([]),
           operation,
           title,
           description || '',
