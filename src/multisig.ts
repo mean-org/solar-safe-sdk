@@ -7,9 +7,40 @@ import { MultisigParticipant } from "./types";
  * @interface: Multisig
  */
 export interface Multisig {
+  /**
+   * Creates a new multisig account with funds
+   *
+   * @public
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {number} lamports - The amount of lamports to fund the multisig.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions.
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns Promise<{
+   *   transaction: Transaction;
+   *   msAccount: PublicKey;
+   *   msSignerAccount: PublicKey;
+   * } | null> Returns a promise that resolves to an object or null.
+   *
+   * @property {Transaction} transaction - The transaction for creating a new multisig.
+   * @property {PublicKey} msAccount - The multisig account public key.
+   * @property {PublicKey} msSignerAccount - The multisig signer/vault account public key.
+   */
+  buildCreateFundedMultisigTransaction: (
+    payer: PublicKey,
+    lamports: number,
+    label: string,
+    threshold: number,
+    participants: MultisigParticipant[],
+  ) => Promise<{
+    transaction: Transaction,
+    msAccount: PublicKey,
+    msSignerAccount: PublicKey,
+  } | null>,
 
     /**
      * Creates a new multisig account
+     * @deprecated This function will be removed in next major release, use `buildCreateFundedMultisigTransaction` instead.
      *
      * @public
      * @param {PublicKey} payer - The payer of the transaction.

@@ -331,27 +331,39 @@ export class MeanMultisig implements Multisig {
 
   /**
    * Creates a new multisig account
-   *
+   * 
    * @public
    * @param {PublicKey} payer - The payer of the transaction.
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   * @returns Promise<{
+   *   transaction: Transaction;
+   *   msAccount: PublicKey;
+   *   msSignerAccount: PublicKey;
+   * } | null> Returns a promise that resolves to an object or null.
+   * 
+   * @property {Transaction} transaction - The transaction for creating a new multisig.
+   * @property {PublicKey} msAccount - The multisig account public key.
+   * @property {PublicKey} msSignerAccount - The multisig signer/vault account public key.
    */
-  createMultisig = async (
+  buildCreateMultisigTransaction = async (
     payer: PublicKey,
     label: string,
     // description: string | undefined,
     threshold: number,
     participants: MultisigParticipant[]
 
-  ): Promise<Transaction | null> => {
+  ): Promise<{
+    transaction: Transaction;
+    msAccount: PublicKey;
+    msSignerAccount: PublicKey;
+  } | null> => {
 
     try {
 
       const multisig = Keypair.generate();
-      const [, nonce] = await PublicKey.findProgramAddress(
+      const [multisigSigner, nonce] = await PublicKey.findProgramAddress(
         [multisig.publicKey.toBuffer()],
         this.program.programId
       );
@@ -382,12 +394,42 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[multisig]);
 
-      return tx;
+      return {
+        transaction: tx,
+        msAccount: multisig.publicKey,
+        msSignerAccount: multisigSigner,
+      };
 
     } catch (err: any) {
       console.error(`Create Multisig: ${err}`);
       return null;
     }
+  };
+
+  /**
+   * Creates a new multisig account
+   * 
+   * @deprecated This function will be removed in next major release, use `buildCreateMultisigTransaction` instead.
+   *
+   * @public
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   * 
+   */
+  createMultisig = async (
+    payer: PublicKey,
+    label: string,
+    // description: string | undefined,
+    threshold: number,
+    participants: MultisigParticipant[]
+
+  ): Promise<Transaction | null> => {
+    console.warn("createMultisig is deprecated, use buildCreateMultisigTransaction instead");
+    const result = await this.buildCreateMultisigTransaction(payer, label, threshold, participants)
+    return result ? result.transaction : null;
   };
 
   /**
@@ -399,16 +441,28 @@ export class MeanMultisig implements Multisig {
    * @param {string} label - The label of the multisig account.
    * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
    * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
-   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   * @returns Promise<{
+   *   transaction: Transaction;
+   *   msAccount: PublicKey;
+   *   msSignerAccount: PublicKey;
+   * } | null> Returns a promise that resolves to an object or null.
+   * 
+   * @property {Transaction} transaction - The transaction for creating a new multisig.
+   * @property {PublicKey} msAccount - The multisig account public key.
+   * @property {PublicKey} msSignerAccount - The multisig signer/vault account public key.
    */
-  createFundedMultisig = async (
+  buildCreateFundedMultisigTransaction = async (
     payer: PublicKey,
     lamports: number,
     label: string,
     threshold: number,
     participants: MultisigParticipant[]
 
-  ): Promise<Transaction | null> => {
+  ): Promise<{
+    transaction: Transaction;
+    msAccount: PublicKey;
+    msSignerAccount: PublicKey;
+  } | null> => {
 
     try {
 
@@ -451,12 +505,42 @@ export class MeanMultisig implements Multisig {
       tx.recentBlockhash = blockhash;
       tx.partialSign(...[multisig]);
 
-      return tx;
+      return {
+        transaction: tx,
+        msAccount: multisig.publicKey,
+        msSignerAccount: multisigSigner,
+      };
 
     } catch (err: any) {
       console.error(`Create Multisig: ${err}`);
       return null;
     }
+  };
+
+  /**
+   * Creates a new multisig account with funds
+   * 
+   * @deprecated This function will be removed in next major release, use `buildCreateFundedMultisigTransaction` instead.
+   *
+   * @public
+   * @param {PublicKey} payer - The payer of the transaction.
+   * @param {number} lamports - The amount of lamports to fund the multisig.
+   * @param {string} label - The label of the multisig account.
+   * @param {number} threshold - The minimum amount required in this multisig to execute transactions. 
+   * @param {MultisigParticipant[]} participants - The partisipants/owners of the multisig.
+   * @returns {Promise<Transaction | null>} Returns a transaction for creating a new multisig.
+   */
+  createFundedMultisig = async (
+    payer: PublicKey,
+    lamports: number,
+    label: string,
+    threshold: number,
+    participants: MultisigParticipant[]
+
+  ): Promise<Transaction | null> => {
+    console.warn("createFundedMultisig is deprecated, use buildCreateFundedMultisigTransaction instead");
+    const result = await this.buildCreateFundedMultisigTransaction(payer, lamports, label, threshold, participants)
+    return result ? result.transaction : null;    
   };
 
   /**
