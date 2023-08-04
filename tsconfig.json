@@ -1,16 +1,12 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Node 14",  
+  "display": "Node 14",
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "es2021"
-    ],
+    "lib": ["dom", "dom.iterable", "es2021"],
     "outDir": "./lib",
     "module": "commonjs",
-    "target": "es2021",  
+    "target": "es2021",
     "strict": true,
     "allowJs": true,
     "sourceMap": false,
