@@ -761,6 +761,7 @@ export class MeanMultisig implements Multisig {
 
   /**
    * Creates a multisig transaction proposal
+   * @deprecated This function will be removed in next major release, use `buildCreateTransaction` instead.
    *
    * @public
    * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
