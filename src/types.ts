@@ -1,14 +1,14 @@
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey } from '@solana/web3.js';
 
-export const MEAN_MULTISIG_PROGRAM = new PublicKey("FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j");
-export const MEAN_MULTISIG_OPS = new PublicKey("3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw");
+export const MEAN_MULTISIG_PROGRAM = new PublicKey('FF7U7Vj1PpBkTPau7frwLLrUHrjkxTQLsH7U5K3T3B3j');
+export const MEAN_MULTISIG_OPS = new PublicKey('3TD6SWY9M1mLY2kZWJNavPLhwXvcRsWdnZLRaMzERJBw');
 export const LAMPORTS_PER_SIG = 5000;
 export const DEFAULT_EXPIRATION_TIME_SECONDS = 604800;
-export const ACCOUNT_REPLACEMENT_PLACEHOLDER = new PublicKey("NewPubkey1111111111111111111111111111111111");
+export const ACCOUNT_REPLACEMENT_PLACEHOLDER = new PublicKey('NewPubkey1111111111111111111111111111111111');
 
 /**
  * `MultisigTransactionStatus`
- * 
+ *
  * @enum {number}
  */
 export enum MultisigTransactionStatus {
@@ -25,12 +25,12 @@ export enum MultisigTransactionStatus {
   /** Proposal has expired */
   Expired = 5,
   /** Pending for execution */
-  Queued = 6,
+  Queued = 6
 }
 
 /**
  * `MULTISIG_ACTIONS`
- * 
+ *
  * @enum {number}
  */
 export enum MULTISIG_ACTIONS {
@@ -39,12 +39,12 @@ export enum MULTISIG_ACTIONS {
   createTransaction = 3,
   cancelTransaction = 4,
   approveTransaction = 5,
-  executeTransaction = 6,
+  executeTransaction = 6
 }
 
 /**
  * `MultisigTransactionFees` type definition
- * 
+ *
  * @type {MultisigTransactionFees}
  */
 export type MultisigTransactionFees = {
@@ -55,7 +55,7 @@ export type MultisigTransactionFees = {
 
 /**
  * `MultisigInfo` type definition
- * 
+ *
  * @type {MultisigInfo}
  */
 export type MultisigInfo = {
@@ -75,7 +75,7 @@ export type MultisigInfo = {
 
 /**
  * `MultisigTransaction` type definition
- * 
+ *
  * @type {MultisigTransaction}
  */
 export type MultisigTransaction = {
@@ -99,7 +99,7 @@ export type MultisigTransaction = {
 
 /**
  * `MultisigTransactionActivity` type definition
- * 
+ *
  * @type {MultisigTransactionActivityItem}
  */
 export type MultisigTransactionActivityItem = {
@@ -108,11 +108,11 @@ export type MultisigTransactionActivityItem = {
   action: string;
   createdOn: Date;
   owner: any;
-}
+};
 
 /**
  * `MultisigParticipant` type definition
- * 
+ *
  * @type {MultisigParticipant}
  */
 export type MultisigParticipant = {
@@ -122,7 +122,7 @@ export type MultisigParticipant = {
 
 /**
  * `MultisigTransactionDetail` type definition
- * 
+ *
  * @type {MultisigTransactionDetail}
  */
 export type MultisigTransactionDetail = {
@@ -133,7 +133,7 @@ export type MultisigTransactionDetail = {
 
 /**
  * `MultisigTransactionSummary` type definition
- * 
+ *
  * @type {MultisigTransactionSummary}
  */
 export type MultisigTransactionSummary = {

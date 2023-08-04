@@ -5,21 +5,21 @@ name: GH Release & NPM Publish
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 # Automatically create a GitHub Release, with release details specified (the relevant commits)
 jobs:
   release:
-    name: "Release & Publish"
-    runs-on: "ubuntu-latest"
+    name: 'Release & Publish'
+    runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3      
+      - uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: npm i
-      - run: npm run build       
+      - run: npm run build
 
       - name: Meandao Release & Publish Toolkit
         uses: mean-dao/npm-publish-toolkit@v10

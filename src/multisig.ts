@@ -1,10 +1,5 @@
-import {
-  AccountMeta,
-  PublicKey,
-  Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
-import { MultisigParticipant } from "./types";
+import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { MultisigParticipant } from './types';
 
 /**
  * Multisig interface
@@ -83,7 +78,7 @@ export interface Multisig {
    * @property {Transaction} transaction - The transaction for creating a proposal.
    * @property {PublicKey} proposalAccount - The proposal account public key.
    */
-  buildCreateTransaction: (
+  buildCreateProposalTransaction: (
     proposer: PublicKey,
     title: string,
     description: string | undefined,
@@ -101,7 +96,7 @@ export interface Multisig {
 
   /**
    * Creates a multisig transaction proposal
-   * @deprecated This function will be removed in next major release, use `buildCreateTransaction` instead.
+   * @deprecated This function will be removed in next major release, use `buildCreateProposalTransaction` instead.
    *
    * @public
    * @param {PublicKey} proposer - The proposer of the transaction proposal. The proposer has to be one of the owners in the multisig of the transaction proposal.
@@ -136,10 +131,7 @@ export interface Multisig {
    * @param {PublicKey} transaction - The transaction proposal to be canceled.
    * @returns {Promise<Transaction | null>} Returns a transaction for canceling the transaction proposal.
    */
-  cancelTransaction: (
-    proposer: PublicKey,
-    transaction: PublicKey
-  ) => Promise<Transaction | null>;
+  cancelTransaction: (proposer: PublicKey, transaction: PublicKey) => Promise<Transaction | null>;
 
   /**
    * Approves a multisig transaction proposal
@@ -148,10 +140,7 @@ export interface Multisig {
    * @param {PublicKey} transaction - The transaction proposal to be approved.
    * @returns {Promise<Transaction | null>} Returns a transaction for approving the transaction proposal.
    */
-  approveTransaction: (
-    owner: PublicKey,
-    transaction: PublicKey
-  ) => Promise<Transaction | null>;
+  approveTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction | null>;
 
   /**
    * Rejects a multisig transaction proposal
@@ -160,10 +149,7 @@ export interface Multisig {
    * @param {PublicKey} transaction - The transaction proposal to be approved.
    * @returns {Promise<Transaction | null>} Returns a transaction for approving the transaction proposal.
    */
-  rejectTransaction: (
-    owner: PublicKey,
-    transaction: PublicKey
-  ) => Promise<Transaction | null>;
+  rejectTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction | null>;
 
   /**
    * Executes a multisig transaction proposal
@@ -173,8 +159,5 @@ export interface Multisig {
    * @param {PublicKey} transaction - The transaction proposal to be executed.
    * @returns {Promise<Transaction | null>} Returns a transaction for executing the transaction proposal.
    */
-  executeTransaction: (
-    owner: PublicKey,
-    transaction: PublicKey
-  ) => Promise<Transaction>;
+  executeTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction>;
 }
