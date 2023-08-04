@@ -787,6 +787,9 @@ export class MeanMultisig implements Multisig {
     data: Buffer | undefined,
     preInstructions: TransactionInstruction[] = []
   ): Promise<Transaction | null> => {
+    console.warn(
+      "createTransaction is deprecated, use buildCreateTransaction instead"
+    );
     try {
       if (!this.settings) {
         this.settings = (
