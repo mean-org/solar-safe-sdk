@@ -1,5 +1,5 @@
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { MultisigParticipant } from './types';
+import { MultisigParticipant, MultisigTransaction, MultisigTransactionInstructionInfo } from './types';
 
 /**
  * Multisig interface
@@ -160,4 +160,13 @@ export interface Multisig {
    * @returns {Promise<Transaction | null>} Returns a transaction for executing the transaction proposal.
    */
   executeTransaction: (owner: PublicKey, transaction: PublicKey) => Promise<Transaction>;
+
+  /**
+   * Decodes a multisig transaction proposal
+   *
+   * @public
+   * @param {MultisigTransaction} transaction - The multisig transaction proposal data
+   * @returns {MultisigTransactionInstructionInfo | null} Returns a transaction for executing the transaction proposal.
+   */
+  decodeTransaction: (transaction: MultisigTransaction) => MultisigTransactionInstructionInfo | null;
 }

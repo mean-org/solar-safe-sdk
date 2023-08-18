@@ -31,9 +31,13 @@ import {
   MultisigInfo,
   MultisigParticipant,
   MultisigTransaction,
-  MultisigTransactionActivityItem
+  MultisigTransactionActivityItem,
+  MultisigTransactionInstructionInfo
 } from './types';
 import {
+  createAnchorProgram,
+  parseMultisigProposalIx,
+  parseMultisigSystemProposalIx,
   parseMultisigTransaction,
   parseMultisigTransactionActivity,
   parseMultisigV1Account,
@@ -41,7 +45,9 @@ import {
 } from './utils';
 // import { IDL, MeanMultisig as IdlMultisig } from './idl';
 import { utf8 } from '@project-serum/anchor/dist/cjs/utils/bytes';
+import { IDL as SplTokenIdl } from '@project-serum/anchor/dist/cjs/spl/token';
 import { IDL, IdlMultisig } from '.';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 type IdlTransaction = IdlAccounts<IdlMultisig>['transaction'];
 type IdlTransactionAccount = IdlTypes<IdlMultisig>['TransactionAccount'];
@@ -957,5 +963,24 @@ export class MeanMultisig implements Multisig {
     tx.recentBlockhash = blockhash;
 
     return tx;
+  };
+
+  /**
+   * Decodes a multisig transaction proposal
+   *
+   * @public
+   * @param {MultisigTransaction} transaction - The multisig transaction proposal data
+   * @returns {MultisigTransactionInstructionInfo | null} Returns a transaction for executing the transaction proposal.
+   */
+  decodeTransaction = (transaction: MultisigTransaction): MultisigTransactionInstructionInfo | null => {
+    if (transaction.programId.equals(SystemProgram.programId)) {
+      return parseMultisigSystemProposalIx(transaction);
+    } else if (transaction.programId.equals(TOKEN_PROGRAM_ID)) {
+      const program = createAnchorProgram(this.connection, TOKEN_PROGRAM_ID, SplTokenIdl);
+      const ixInfo = parseMultisigProposalIx(transaction, this.program.programId, program);
+      return ixInfo;
+    } else {
+      return parseMultisigProposalIx(transaction, this.program.programId);
+    }
   };
 }
