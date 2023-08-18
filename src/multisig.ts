@@ -168,5 +168,5 @@ export interface Multisig {
    * @param {MultisigTransaction} transaction - The multisig transaction proposal data
    * @returns {MultisigTransactionInstructionInfo | null} Returns a transaction for executing the transaction proposal.
    */
-  decodeTransaction: (transaction: MultisigTransaction) => MultisigTransactionInstructionInfo | null;
+  decodeProposalInstruction: (transaction: MultisigTransaction) => MultisigTransactionInstructionInfo | null;
 }
