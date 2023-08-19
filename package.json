@@ -1,6 +1,6 @@
 {
   "name": "@mean-dao/mean-multisig-sdk",
-  "version": "1.19.0-alpha.2",
+  "version": "1.19.0-alpha.3",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "lib/index.js",
   "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
@@ -29,11 +29,13 @@
     "@solana/spl-token": "0.1.8",
     "@solana/web3.js": "1.36.0",
     "bn.js": "^5.2.0",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "buffer-layout": "^1.2.2"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.1",
     "@tsconfig/recommended": "1.0.1",
+    "@types/bn.js": "^5.1.0",
     "@types/node": "^17.0.29",
     "@typescript-eslint/eslint-plugin": "5.41.0",
     "@typescript-eslint/parser": "5.41.0",

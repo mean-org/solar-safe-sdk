@@ -1,5 +1,14 @@
-import { LAMPORTS_PER_SOL, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey } from '@solana/web3.js';
-import { Program } from '@project-serum/anchor';
+import {
+  Commitment,
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  ParsedTransactionWithMeta,
+  PartiallyDecodedInstruction,
+  PublicKey,
+  TransactionInstruction
+} from '@solana/web3.js';
+import { AnchorProvider, BorshInstructionCoder, Idl, Program, SplToken, SplTokenCoder } from '@project-serum/anchor';
 import {
   InstructionAccount,
   InstructionParameter,
@@ -12,9 +21,17 @@ import {
   MultisigTransactionStatus,
   MultisigTransactionSummary,
   MULTISIG_ACTIONS,
-  MultisigTransactionActivityItem
+  MultisigTransactionActivityItem,
+  MultisigTransactionInstructionInfo,
+  InstructionDataInfo,
+  InstructionAccountInfo,
+  OperationType
 } from './types';
 import { IdlMultisig } from '.';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { MeanSplTokenInstructionCoder } from './spl-token-coder/instruction';
+import { bs58 } from '@project-serum/anchor/dist/cjs/utils/bytes';
+import { MeanSystemInstructionCoder } from './system-program-coder/instruction';
 
 /**
  * Gets the multisig actions fees.
@@ -444,4 +461,378 @@ const parseMultisigTransactionInstruction = (transaction: MultisigTransaction): 
     console.error(`Parse Multisig Transaction: ${err}`);
     return null;
   }
+};
+
+export const createAnchorProgram = (
+  connection: Connection,
+  programId: PublicKey,
+  programIdl: Idl,
+  commitment: Commitment = 'confirmed'
+): Program<any> => {
+  const opts = {
+    skipPreflight: false,
+    commitment: commitment || 'confirmed',
+    preflightCommitment: commitment || 'confirmed',
+    maxRetries: 3
+  };
+
+  const readOnlyWallet = Keypair.generate();
+  const anchorWallet = {
+    publicKey: new PublicKey(readOnlyWallet.publicKey),
+    signAllTransactions: async (txs: any) => txs,
+    signTransaction: async (tx: any) => tx
+  };
+
+  const provider = new AnchorProvider(connection, anchorWallet, opts);
+
+  if (programId.equals(TOKEN_PROGRAM_ID)) {
+    const coder = (): SplTokenCoder => {
+      return new SplTokenCoder(programIdl);
+    };
+
+    return new Program<SplToken>(programIdl as SplToken, programId, provider, coder());
+  }
+
+  return new Program(programIdl, programId, provider);
+};
+
+/**
+ * Parses a multisig transaction proposal
+ *
+ * @public
+ * @param {MultisigTransaction} transaction - The multisig transaction proposal data
+ * @param {PublicKey} multisigProgramId - The id of the multisig program.
+ * @param {Program<any>} program - Anchor program involved in multisig transaction.
+ * @returns {MultisigTransactionInstructionInfo | null} Returns a transaction for executing the transaction proposal.
+ */
+export const parseMultisigProposalIx = (
+  transaction: MultisigTransaction,
+  multisigProgramId: PublicKey,
+  program?: Program<any> | undefined
+): MultisigTransactionInstructionInfo | null => {
+  try {
+    const ix = new TransactionInstruction({
+      programId: transaction.programId,
+      keys: transaction.accounts,
+      data: transaction.data
+    });
+
+    if (!program) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const ixName = getIxNameFromMultisigTransaction(transaction, program.idl);
+    console.log('ixName', ixName);
+
+    if (!ixName) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const coder = program.programId.equals(TOKEN_PROGRAM_ID)
+      ? new MeanSplTokenInstructionCoder(program.idl)
+      : new BorshInstructionCoder(program.idl);
+
+    const dataEncoded = bs58.encode(ix.data);
+    const dataDecoded = coder.decode(dataEncoded, 'base58');
+
+    if (!dataDecoded) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const ixData = dataDecoded.data as any;
+
+    const formattedData = coder.format(
+      {
+        name: dataDecoded.name,
+        data: !program.programId.equals(multisigProgramId)
+          ? ixData
+          : {
+              label: ixData['label'],
+              threshold: ixData['threshold'],
+              owners: []
+            }
+      },
+      ix.keys
+    );
+
+    if (!formattedData) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    if (program.programId.equals(multisigProgramId)) {
+      for (const arg of formattedData.args) {
+        if (arg.name === 'owners') {
+          arg.data = ixData['owners'].map((o: any) => {
+            return {
+              label: o.name,
+              type: 'string',
+              data: o.address.toBase58()
+            };
+          });
+        }
+      }
+    }
+
+    const ixAccInfos: InstructionAccountInfo[] = [];
+    let accIndex = 0;
+
+    for (const acc of ix.keys) {
+      ixAccInfos.push({
+        index: accIndex,
+        label: formattedData.accounts[accIndex].name,
+        value: acc.pubkey.toBase58()
+      } as InstructionAccountInfo);
+
+      accIndex++;
+    }
+
+    const dataInfos: InstructionDataInfo[] = [];
+    let dataIndex = 0;
+
+    for (const dataItem of formattedData.args) {
+      dataInfos.push({
+        label: `${dataItem.name[0].toUpperCase()}${dataItem.name.substring(1)}`,
+        value: dataItem.data,
+        index: dataIndex
+      } as InstructionDataInfo);
+      dataIndex++;
+    }
+
+    const nameArray = (program?.idl.name as string).split('_');
+    const ixInfo = {
+      programId: ix.programId.toBase58(),
+      programName: nameArray.map(i => `${i[0].toUpperCase()}${i.substring(1)}`).join(' '),
+      accounts: ixAccInfos,
+      data: dataInfos
+    } as MultisigTransactionInstructionInfo;
+
+    return ixInfo;
+  } catch (err: any) {
+    console.error(`Parse Multisig Transaction: ${err}`);
+    return null;
+  }
+};
+
+export const parseMultisigSystemProposalIx = (
+  transaction: MultisigTransaction
+): MultisigTransactionInstructionInfo | null => {
+  try {
+    const ix = new TransactionInstruction({
+      programId: transaction.programId,
+      keys: transaction.accounts,
+      data: transaction.data
+    });
+
+    const ixName = getIxNameFromMultisigTransaction(transaction);
+
+    if (!ixName) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const coder = new MeanSystemInstructionCoder();
+
+    const dataDecoded = coder.decode(ix.data);
+
+    if (!dataDecoded) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const ixData = dataDecoded.data as any;
+
+    const formattedData = coder.format(
+      {
+        name: dataDecoded.name,
+        data: ixData
+      },
+      ix.keys
+    );
+
+    if (!formattedData) {
+      return getMultisigInstructionSummary(ix);
+    }
+
+    const ixAccInfos: InstructionAccountInfo[] = [];
+    let accIndex = 0;
+
+    for (const acc of ix.keys) {
+      ixAccInfos.push({
+        index: accIndex,
+        label: formattedData.accounts[accIndex].name,
+        value: acc.pubkey.toBase58()
+      } as InstructionAccountInfo);
+
+      accIndex++;
+    }
+
+    const dataInfos: InstructionDataInfo[] = [];
+    let dataIndex = 0;
+
+    for (const dataItem of formattedData.args) {
+      dataInfos.push({
+        label: `${dataItem.name[0].toUpperCase()}${dataItem.name.substring(1)}`,
+        value: dataItem.data,
+        index: dataIndex
+      } as InstructionDataInfo);
+      dataIndex++;
+    }
+
+    const ixInfo = {
+      programId: ix.programId.toBase58(),
+      programName: 'System Program',
+      accounts: ixAccInfos,
+      data: dataInfos
+    } as MultisigTransactionInstructionInfo;
+
+    return ixInfo;
+  } catch (err: any) {
+    console.error(`Parse Multisig Transaction: ${err}`);
+    return null;
+  }
+};
+
+export const getIxNameFromMultisigTransaction = (transaction: MultisigTransaction, programIdl?: Idl) => {
+  let ix: any;
+
+  if (!programIdl) {
+    switch (transaction.operation) {
+      case OperationType.Transfer:
+      case OperationType.TransferTokens:
+        ix = 'transfer';
+        break;
+      default:
+        ix = undefined;
+    }
+    return ix;
+  }
+
+  switch (transaction.operation) {
+    // System Program
+    case OperationType.Transfer:
+      ix = 'transfer';
+      break;
+    // MEan Multisig
+    case OperationType.EditMultisig:
+      ix = programIdl.instructions.find(ix => ix.name === 'editMultisig');
+      break;
+    // SPL Token
+    case OperationType.TransferTokens:
+      ix = programIdl.instructions.find(ix => ix.name === 'transfer');
+      break;
+    case OperationType.SetAssetAuthority:
+      ix = programIdl.instructions.find(ix => ix.name === 'setAuthority');
+      break;
+    case OperationType.CloseTokenAccount:
+    case OperationType.DeleteAsset:
+      ix = programIdl.instructions.find(ix => ix.name === 'closeAccount');
+      break;
+    // MSP
+    case OperationType.TreasuryCreate:
+      ix = programIdl.instructions.find(ix => ix.name === 'createTreasury');
+      break;
+    case OperationType.TreasuryStreamCreate:
+      ix = programIdl.instructions.find(ix => ix.name === 'createStream');
+      break;
+    case OperationType.TreasuryRefreshBalance:
+      ix = programIdl.instructions.find(ix => ix.name === 'refreshTreasuryData');
+      break;
+    case OperationType.TreasuryAddFunds:
+      ix = programIdl.instructions.find(ix => ix.name === 'addFunds');
+      break;
+    case OperationType.TreasuryClose:
+      ix = programIdl.instructions.find(ix => ix.name === 'closeTreasury');
+      break;
+    case OperationType.TreasuryWithdraw:
+      ix = programIdl.instructions.find(ix => ix.name === 'treasuryWithdraw');
+      break;
+    case OperationType.StreamCreate:
+      ix = programIdl.instructions.find(ix => ix.name === 'createStream');
+      break;
+    case OperationType.StreamAddFunds:
+      ix = programIdl.instructions.find(ix => ix.name === 'allocate');
+      break;
+    case OperationType.StreamPause:
+      ix = programIdl.instructions.find(ix => ix.name === 'pauseStream');
+      break;
+    case OperationType.StreamResume:
+      ix = programIdl.instructions.find(ix => ix.name === 'resumeStream');
+      break;
+    case OperationType.StreamClose:
+      ix = programIdl.instructions.find(ix => ix.name === 'closeStream');
+      break;
+    case OperationType.StreamWithdraw:
+      ix = programIdl.instructions.find(ix => ix.name === 'withdraw');
+      break;
+    case OperationType.StreamTransferBeneficiary:
+      ix = programIdl.instructions.find(ix => ix.name === 'transferStream');
+      break;
+    // CREDIX
+    case OperationType.CredixDepositFunds:
+      ix = programIdl.instructions.find(ix => ix.name === 'depositFunds');
+      break;
+    case OperationType.CredixWithdrawFunds:
+    case OperationType.CredixRedeemFundsForWithdrawRequest:
+      ix = programIdl.instructions.find(ix => ix.name === 'withdrawFunds' || ix.name === 'createWithdrawRequest');
+      break;
+    case OperationType.CredixDepositTranche:
+      ix = programIdl.instructions.find(ix => ix.name === 'depositTranche');
+      break;
+    case OperationType.CredixWithdrawTranche:
+      ix = programIdl.instructions.find(ix => ix.name === 'withdrawTranche');
+      break;
+    default:
+      ix = undefined;
+  }
+
+  if (typeof ix === 'string') {
+    return ix.length ? ix : '';
+  }
+
+  return ix ? ix.name : '';
+};
+
+export const getMultisigInstructionSummary = (
+  instruction: TransactionInstruction
+): MultisigTransactionInstructionInfo | null => {
+  try {
+    const ixAccInfos: InstructionAccountInfo[] = [];
+    let accIndex = 0;
+
+    for (const acc of instruction.keys) {
+      ixAccInfos.push({
+        index: accIndex,
+        label: '',
+        value: acc.pubkey.toBase58()
+      } as InstructionAccountInfo);
+
+      accIndex++;
+    }
+
+    const bufferStr = Buffer.from(instruction.data).toString('hex');
+    const bufferStrArray: string[] = [];
+
+    for (let i = 0; i < bufferStr.length; i += 2) {
+      bufferStrArray.push(bufferStr.substring(i, i + 2));
+    }
+
+    const ixInfo = {
+      programId: instruction.programId.toBase58(),
+      accounts: ixAccInfos,
+      data: [
+        {
+          label: '',
+          value: bufferStrArray.join(' ')
+        } as InstructionDataInfo
+      ]
+    } as MultisigTransactionInstructionInfo;
+
+    return ixInfo;
+  } catch (err: any) {
+    console.error(`Multisig Instruction Summary: ${err}`);
+    return null;
+  }
+};
+
+export const sentenceCase = (field: string): string => {
+  const result = field.replace(/([A-Z])/g, ' $1');
+  return result.charAt(0).toUpperCase() + result.slice(1);
 };
