@@ -1,6 +1,5 @@
 import * as BufferLayout from 'buffer-layout';
-import { Instruction, InstructionCoder } from '@project-serum/anchor';
-import BN from 'bn.js';
+import { BN, Instruction, InstructionCoder } from '@project-serum/anchor';
 import camelCase from 'camelcase';
 import { struct } from '@project-serum/borsh';
 import { AccountMeta } from '@solana/web3.js';

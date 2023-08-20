@@ -3,7 +3,12 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Node 14",
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "es2021"],
+    "baseUrl": "src",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "es2021"
+    ],
     "outDir": "./lib",
     "module": "commonjs",
     "target": "es2021",
@@ -16,5 +21,8 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "include": [
+    "./src/**/*"
+  ]
 }
