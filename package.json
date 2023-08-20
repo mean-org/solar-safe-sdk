@@ -1,6 +1,6 @@
 {
   "name": "@mean-dao/mean-multisig-sdk",
-  "version": "1.19.0-alpha.4",
+  "version": "1.19.0-alpha.5",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "lib/index.js",
   "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
@@ -15,12 +15,11 @@
   },
   "types": "lib/index.d.ts",
   "files": [
-    "lib/*.*"
+    "lib/*.*",
+    "lib/**/*.*"
   ],
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -R ./lib",
-    "clean:win": "rmdir /s lib",
+    "build": "rimraf lib && tsc",
     "eslint:fix": "eslint --fix"
   },
   "dependencies": {
@@ -40,6 +39,7 @@
     "eslint": "8.26.0",
     "eslint-config-prettier": "8.5.0",
     "prettier": "^2.5.1",
+    "rimraf": "^3.0.2",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.3"
   }

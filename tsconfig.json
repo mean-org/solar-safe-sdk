@@ -1,17 +1,17 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Node 14",
+  "display": "Node 16",
   "compilerOptions": {
     "baseUrl": "src",
     "lib": [
       "dom",
       "dom.iterable",
-      "es2021"
+      "ESNext"
     ],
     "outDir": "./lib",
-    "module": "commonjs",
-    "target": "es2021",
+    "module": "CommonJS",
+    "target": "ES6",
     "strict": true,
     "allowJs": true,
     "sourceMap": false,
@@ -23,6 +23,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "./src/**/*"
+    "src/*.ts",
+    "src/**/*.ts"
   ]
 }
