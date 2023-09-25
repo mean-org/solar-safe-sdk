@@ -25,7 +25,8 @@ import {
   MultisigTransactionInstructionInfo,
   InstructionDataInfo,
   InstructionAccountInfo,
-  OperationType
+  OperationType,
+  OwnerMeta
 } from './types';
 import { IdlMultisig } from '.';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
@@ -567,7 +568,7 @@ export const parseMultisigProposalIx = (
               label: o.name,
               type: 'string',
               data: o.address.toBase58()
-            };
+            } as OwnerMeta;
           });
         }
       }

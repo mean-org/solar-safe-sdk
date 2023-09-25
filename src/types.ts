@@ -174,10 +174,16 @@ export type InstructionAccountInfo = {
   value: string;
 };
 
+export type OwnerMeta = {
+  label: string;
+  type: string;
+  data: string;
+};
+
 export type InstructionDataInfo = {
   index: number;
   label: string;
-  value: any;
+  value: string | string[] | OwnerMeta[];
 };
 
 /**
