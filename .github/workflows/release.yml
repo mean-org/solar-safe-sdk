@@ -13,8 +13,8 @@ jobs:
     name: 'Release & Publish'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
@@ -22,7 +22,7 @@ jobs:
       - run: npm run build
 
       - name: Meandao Release & Publish Toolkit
-        uses: mean-dao/npm-publish-toolkit@v10
+        uses: mean-dao/npm-publish-toolkit@v17.1
         with:
           access: public
           npm_token: ${{ secrets.NPM_TOKEN }}
