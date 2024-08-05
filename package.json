@@ -1,6 +1,6 @@
 {
   "name": "@mean-dao/mean-multisig-sdk",
-  "version": "1.19.2-alpha.1",
+  "version": "1.19.2-alpha.3",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "lib/index.js",
   "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
