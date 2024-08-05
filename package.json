@@ -19,7 +19,7 @@
     "lib/**/*.*"
   ],
   "scripts": {
-    "prebuild": "rm -R ./lib",
+    "clean": "rm -R ./lib",
     "build": "tsc",
     "eslint:fix": "eslint --fix"
   },
