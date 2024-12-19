@@ -1,6 +1,6 @@
 {
   "name": "@mean-dao/mean-multisig-sdk",
-  "version": "1.19.2",
+  "version": "1.19.3.alpha.1",
   "description": "Typescript SDK to interact with the Mean Multisig program.",
   "main": "lib/index.js",
   "repository": "https://github.com/mean-dao/mean-multisig-sdk.git",
@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@tsconfig/recommended": "1.0.7",
-    "@types/node": "^22.1",
+    "@types/node": "^22.10",
     "@typescript-eslint/eslint-plugin": "5.41.0",
     "@typescript-eslint/parser": "5.41.0",
     "eslint": "8.26.0",
@@ -42,11 +42,10 @@
     "ts-node": "10.9.2",
     "typescript": "^5.2.2"
   },
-  "resolutions": {
-    "@solana/web3.js": "1.95.1",
-    "ws": "8.17.1"
-  },
   "overrides": {
-    "ws": "8.17.1"
+    "@solana/web3.js": "1.95.2",
+    "cross-spawn": "7.0.6",
+    "micromatch": "4.0.8",
+    "ws": "8.18.0"
   }
 }

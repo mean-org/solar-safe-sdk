@@ -321,7 +321,7 @@ export class MeanMultisig implements Multisig {
         filter['before'] = before;
       }
 
-      let signatures = await this.program.provider.connection.getConfirmedSignaturesForAddress2(
+      let signatures = await this.program.provider.connection.getSignaturesForAddress(
         transaction,
         filter,
         finality
