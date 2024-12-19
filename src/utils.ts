@@ -140,7 +140,7 @@ export const getTransactionStatus = (multisig: any, info: any, detail: any): Mul
  */
 export const parseMultisigV1Account = async (programId: PublicKey, info: any): Promise<MultisigInfo | null> => {
   try {
-    const [multisigSigner] = await PublicKey.findProgramAddress([info.publicKey.toBuffer()], programId);
+    const [multisigSigner] = PublicKey.findProgramAddressSync([info.publicKey.toBuffer()], programId);
 
     let owners: MultisigParticipant[] = [];
     let labelBuffer = Buffer.alloc(info.account.label.length, info.account.label).filter(function (elem, index) {
@@ -188,7 +188,7 @@ export const parseMultisigV1Account = async (programId: PublicKey, info: any): P
  */
 export const parseMultisigV2Account = async (programId: PublicKey, info: any): Promise<MultisigInfo | null> => {
   try {
-    const [multisigSigner] = await PublicKey.findProgramAddress([info.publicKey.toBuffer()], programId);
+    const [multisigSigner] = PublicKey.findProgramAddressSync([info.publicKey.toBuffer()], programId);
 
     let owners: MultisigParticipant[] = [];
     let labelBuffer = Buffer.alloc(info.account.label.length, info.account.label).filter(function (elem, index) {
