@@ -90,11 +90,12 @@ export class MeanMultisig implements Multisig {
     this.program = new Program(IDL, programId ?? MEAN_MULTISIG_PROGRAM, this.provider);
     console.log(`=========> MULTISIG CLIENT CREATED! ProgramID: ${programId}`);
 
-    PublicKey.findProgramAddress([Buffer.from(utf8.encode('settings'))], this.program.programId)
-      .then(([address]) => {
-        this.settings = address;
-      })
-      .catch(err => console.error(err));
+    try {
+      const [address] = PublicKey.findProgramAddressSync([Buffer.from(utf8.encode('settings'))], this.program.programId);
+      this.settings = address;
+    } catch (error) {
+      console.error(`Error initializing multisig program: ${error}`);
+    }
   }
 
   /**
@@ -217,7 +218,7 @@ export class MeanMultisig implements Multisig {
         throw Error(`Transaction account ${transaction.toBase58()} not found`);
       }
 
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.toBuffer()],
         this.program.programId
       );
@@ -262,7 +263,7 @@ export class MeanMultisig implements Multisig {
       let transactions: MultisigTransaction[] = [];
 
       for (let tx of txs) {
-        const [txDetailAddress] = await PublicKey.findProgramAddress(
+        const [txDetailAddress] = PublicKey.findProgramAddressSync(
           [multisig.toBuffer(), tx.publicKey.toBuffer()],
           this.program.programId
         );
@@ -387,13 +388,13 @@ export class MeanMultisig implements Multisig {
   } | null> => {
     try {
       const multisig = Keypair.generate();
-      const [multisigSigner, nonce] = await PublicKey.findProgramAddress(
+      const [multisigSigner, nonce] = PublicKey.findProgramAddressSync(
         [multisig.publicKey.toBuffer()],
         this.program.programId
       );
       if (!this.settings) {
         this.settings = (
-          await PublicKey.findProgramAddress([Buffer.from(utf8.encode('settings'))], this.program.programId)
+          PublicKey.findProgramAddressSync([Buffer.from(utf8.encode('settings'))], this.program.programId)
         )[0];
       }
       const owners = participants.map((p: MultisigParticipant) => {
@@ -488,13 +489,13 @@ export class MeanMultisig implements Multisig {
   } | null> => {
     try {
       const multisig = Keypair.generate();
-      const [multisigSigner, nonce] = await PublicKey.findProgramAddress(
+      const [multisigSigner, nonce] = PublicKey.findProgramAddressSync(
         [multisig.publicKey.toBuffer()],
         this.program.programId
       );
       if (!this.settings) {
         this.settings = (
-          await PublicKey.findProgramAddress([Buffer.from(utf8.encode('settings'))], this.program.programId)
+          PublicKey.findProgramAddressSync([Buffer.from(utf8.encode('settings'))], this.program.programId)
         )[0];
       }
       const owners = participants.map((p: MultisigParticipant) => {
@@ -604,7 +605,7 @@ export class MeanMultisig implements Multisig {
       console.log('Get settings');
       if (!this.settings) {
         this.settings = (
-          await PublicKey.findProgramAddress([Buffer.from(utf8.encode('settings'))], this.program.programId)
+          PublicKey.findProgramAddressSync([Buffer.from(utf8.encode('settings'))], this.program.programId)
         )[0];
       }
       console.log('Generate transaction keypair');
@@ -615,7 +616,7 @@ export class MeanMultisig implements Multisig {
       const createIx = await this.program.account.transaction.createInstruction(transaction, txSize);
 
       console.log('Get txDetailAddress');
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.publicKey.toBuffer()],
         this.program.programId
       );
@@ -695,14 +696,14 @@ export class MeanMultisig implements Multisig {
     try {
       if (!this.settings) {
         this.settings = (
-          await PublicKey.findProgramAddress([Buffer.from(utf8.encode('settings'))], this.program.programId)
+          PublicKey.findProgramAddressSync([Buffer.from(utf8.encode('settings'))], this.program.programId)
         )[0];
       }
       const transaction = Keypair.generate();
       const txSize = 1200;
       const createIx = await this.program.account.transaction.createInstruction(transaction, txSize);
 
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.publicKey.toBuffer()],
         this.program.programId
       );
@@ -763,7 +764,7 @@ export class MeanMultisig implements Multisig {
       }
 
       const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.toBuffer()],
         this.program.programId
       );
@@ -807,7 +808,7 @@ export class MeanMultisig implements Multisig {
       }
 
       const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.toBuffer()],
         this.program.programId
       );
@@ -851,7 +852,7 @@ export class MeanMultisig implements Multisig {
       }
 
       const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
-      const [txDetailAddress] = await PublicKey.findProgramAddress(
+      const [txDetailAddress] = PublicKey.findProgramAddressSync(
         [multisig.toBuffer(), transaction.toBuffer()],
         this.program.programId
       );
@@ -894,9 +895,9 @@ export class MeanMultisig implements Multisig {
     }
 
     const multisig = new PublicKey(txAccount.multisig as PublicKeyInitData);
-    const [multisigSigner] = await PublicKey.findProgramAddress([multisig.toBuffer()], this.program.programId);
+    const [multisigSigner] = PublicKey.findProgramAddressSync([multisig.toBuffer()], this.program.programId);
 
-    const [txDetailAddress] = await PublicKey.findProgramAddress(
+    const [txDetailAddress] = PublicKey.findProgramAddressSync(
       [multisig.toBuffer(), transaction.toBuffer()],
       this.program.programId
     );
